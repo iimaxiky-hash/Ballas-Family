@@ -1066,60 +1066,50 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  function restoreSession() {
-    const s = lsGet(K.SESSION);
-    if (s && s.username) applySession(s);
-  }
-  function getSession() { return lsGet(K.SESSION); }
-  function isAdmin()    { const s = getSession(); return s && s.role === 'admin'; }
-
-  function handleLogin(e) {
+ async function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('login-user').value.trim();
     const password = document.getElementById('login-pass').value;
     const errEl    = document.getElementById('login-err');
-    const storedAccounts = lsGet(K.ACCOUNTS) || [];
-    const user = USERS.find(u => u.username === username && u.password === password)
-              || storedAccounts.find(u => u.username === username && u.password === password);
-    if (!user) { errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none';
-    const session = { username: user.username, role: user.role };
-    lsSet(K.SESSION, session);
-    applySession(session);
-    closeLoginModal();
-    document.getElementById('login-form').reset();
-    toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
-    if (user.role === 'admin') { renderAdminPanel(); }
-  }
 
-  function logout() {
-    localStorage.removeItem(K.SESSION);
-    applySession(null);
-    toast('تم تسجيل الخروج');
-    showSection('home');
-  }
+    toast('جاري التحقق من السيرفر... ⏳');
 
-  function applySession(session) {
-    const loginBtn    = document.getElementById('login-btn');
-    const userDisplay = document.getElementById('user-display');
-    const userBadge   = document.getElementById('username-badge');
-    const adminLink   = document.getElementById('admin-nav-link');
-    const adminMobile = document.getElementById('admin-mobile-link');
+    try {
+      // 1. جلب الحسابات من الفايربيز
+      const response = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
+      const data = await response.json();
+      
+      // تحويل البيانات من Object إلى Array للبحث فيها
+      const firebaseAccounts = data ? Object.values(data) : [];
 
-    if (session && session.username) {
-      loginBtn.style.display    = 'none';
-      userDisplay.style.display = 'flex';
-      userBadge.textContent     = session.username;
-      if (session.role === 'admin') {
-        if (adminLink)   adminLink.style.display   = 'inline';
-        if (adminMobile) adminMobile.style.display = 'block';
+      // 2. البحث عن المستخدم (في مصفوفة الفايربيز أو القائمة الثابتة USERS)
+      const user = USERS.find(u => u.username === username && u.password === password)
+                || firebaseAccounts.find(u => u.username === username && u.password === password);
+
+      if (!user) { 
+        errEl.style.display = 'block'; 
+        toast('خطأ: بيانات الدخول غير صحيحة');
+        return; 
       }
-    } else {
-      loginBtn.style.display    = '';
-      userDisplay.style.display = 'none';
-      userBadge.textContent     = '—';
-      if (adminLink)   adminLink.style.display   = 'none';
-      if (adminMobile) adminMobile.style.display = 'none';
+
+      // 3. نجاح تسجيل الدخول
+      errEl.style.display = 'none';
+      const session = { username: user.username, role: user.role };
+      lsSet(K.SESSION, session);
+      applySession(session);
+      closeLoginModal();
+      document.getElementById('login-form').reset();
+      
+      toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
+      
+      // إذا كان أدمن، قم بتحديث اللوحة بعد تسجيل الدخول
+      if (user.role === 'admin') { 
+        renderAdminPanel(); 
+      }
+
+    } catch (error) {
+      console.error("Login Error:", error);
+      toast('خطأ في الاتصال بالسيرفر، حاول مجدداً');
     }
   }
 
