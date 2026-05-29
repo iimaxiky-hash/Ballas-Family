@@ -1362,6 +1362,8 @@
   }
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
+// ── Firebase Config ──────────────────────────────────────────────────────────
+const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.json";
   function buildTicker() {
     const reports = lsGet(K.REPORTS) || [];
     const items = reports.length
@@ -1489,12 +1491,27 @@
     toast('تم إنشاء حساب العضو: ' + username + ' ✓');
   }
 
-  function renderAdminAccounts() {
-    if (!isAdmin()) return;
-    const accounts = lsGet(K.ACCOUNTS) || [];
-    const el = document.getElementById('admin-accounts-tbl');
-    if (!el) return;
-    if (!accounts.length) { el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد'); return; }
+  async function renderAdminAccounts() {
+  if (!isAdmin()) return;
+  const el = document.getElementById('admin-accounts-tbl');
+  if (!el) return;
+
+  try {
+    // جلب الحسابات الحقيقية من السحاب مباشرة
+    const response = await fetch(FIREBASE_URL);
+    const data = await response.json();
+    
+    if (!data) { 
+      el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد في السحاب'); 
+      return; 
+    }
+
+    // تحويل الكائنات القادمة من Firebase إلى مصفوفة مع الاحتفاظ بالـ ID الفريد للحذف
+    const accounts = Object.keys(data).map(key => ({
+      fbId: key,
+      ...data[key]
+    }));
+
     el.innerHTML = `
       <table class="admin-table">
         <thead><tr>
@@ -1506,19 +1523,37 @@
             <td>${esc(a.joinDate)}</td>
             <td>${esc(a.specialty)}</td>
             <td><div class="admin-actions">
-              <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCloudAccount('${a.fbId}')">حذف</button>
             </div></td>
           </tr>`).join('')}
         </tbody>
       </table>`;
+  } catch (err) {
+    el.innerHTML = emptyAdmin('خطأ في جلب البيانات من السحاب، تحقق من الاتصال أو إعدادات Firebase');
   }
+}
 
-  function deleteAccount(id) {
-    if (!confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
-    lsSet(K.ACCOUNTS, (lsGet(K.ACCOUNTS)||[]).filter(a => a.id !== id));
-    renderAdminAccounts();
-    toast('تم حذف الحساب');
+// احذف الدالة القديمة (deleteAccount) بالكامل وضع هذه مكانها:
+async function deleteCloudAccount(fbId) {
+  if (!confirm('هل تريد حذف هذا الحساب نهائياً من السحاب؟')) return;
+  
+  // رابط الحذف المباشر من قاعدة بياناتك
+  const deleteUrl = FIREBASE_URL.replace('.json', `/${fbId}.json`);
+  
+  toast('جاري الحذف من السحاب... ⏳');
+  try {
+    const response = await fetch(deleteUrl, { method: 'DELETE' });
+    if (response.ok) {
+      toast('تم حذف الحساب بنجاح ✓');
+      // تحديث الجدول فوراً بعد الحذف
+      renderAdminAccounts(); 
+    } else {
+      toast('فشل حذف الحساب');
+    }
+  } catch (err) {
+    toast('خطأ في الاتصال بالسيرفر');
   }
+}
 
   // ── Announcement Banner ────────────────────────────────────────────────────
   function activateAnn() {
