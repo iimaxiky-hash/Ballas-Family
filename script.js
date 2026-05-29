@@ -1,6 +1,25 @@
 // ── CONFIG ────────────────────────────────────────────────────────────────
 const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com";
 
+// ── AUTH & SESSION ────────────────────────────────────────────────────────
+function restoreSession() {
+    const sessionStr = localStorage.getItem('Ballas_Session');
+    if (sessionStr) {
+        const session = JSON.parse(sessionStr);
+        applySession(session);
+        return session;
+    }
+    return null;
+}
+
+function applySession(session) {
+    // يمكنك إضافة منطق إظهار/إخفاء العناصر هنا بناءً على الـ role
+    console.log("Session restored for:", session.username);
+    if (session.role === 'admin') {
+        renderAdminAccounts();
+    }
+}
+
 // ── LOGIN SYSTEM ──────────────────────────────────────────────────────────
 async function handleLogin(e) {
     if (e) e.preventDefault();
@@ -24,7 +43,7 @@ async function handleLogin(e) {
         const session = { username: user.username, role: user.role };
         localStorage.setItem('Ballas_Session', JSON.stringify(session));
         
-        window.location.reload(); // إعادة تحميل الصفحة لتفعيل صلاحيات الأدمن
+        window.location.reload(); 
     } catch (err) {
         console.error("خطأ في تسجيل الدخول:", err);
     }
@@ -59,14 +78,10 @@ async function renderAdminAccounts() {
 
 // ── INITIALIZATION ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // ربط نموذج تسجيل الدخول
+    // 1. استعادة الجلسة فور تحميل الصفحة
+    restoreSession();
+
+    // 2. ربط نموذج تسجيل الدخول
     const loginForm = document.getElementById('login-form');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
-
-    // التحقق من الجلسة
-    const session = localStorage.getItem('Ballas_Session');
-    if (session) {
-        const s = JSON.parse(session);
-        if (s.role === 'admin') renderAdminAccounts();
-    }
 });
