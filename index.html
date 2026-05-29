@@ -1066,50 +1066,60 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
- async function handleLogin(e) {
+  function restoreSession() {
+    const s = lsGet(K.SESSION);
+    if (s && s.username) applySession(s);
+  }
+  function getSession() { return lsGet(K.SESSION); }
+  function isAdmin()    { const s = getSession(); return s && s.role === 'admin'; }
+
+  function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('login-user').value.trim();
     const password = document.getElementById('login-pass').value;
     const errEl    = document.getElementById('login-err');
+    const storedAccounts = lsGet(K.ACCOUNTS) || [];
+    const user = USERS.find(u => u.username === username && u.password === password)
+              || storedAccounts.find(u => u.username === username && u.password === password);
+    if (!user) { errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const session = { username: user.username, role: user.role };
+    lsSet(K.SESSION, session);
+    applySession(session);
+    closeLoginModal();
+    document.getElementById('login-form').reset();
+    toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
+    if (user.role === 'admin') { renderAdminPanel(); }
+  }
 
-    toast('جاري التحقق من السيرفر... ⏳');
+  function logout() {
+    localStorage.removeItem(K.SESSION);
+    applySession(null);
+    toast('تم تسجيل الخروج');
+    showSection('home');
+  }
 
-    try {
-      // 1. جلب الحسابات من الفايربيز
-      const response = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
-      const data = await response.json();
-      
-      // تحويل البيانات من Object إلى Array للبحث فيها
-      const firebaseAccounts = data ? Object.values(data) : [];
+  function applySession(session) {
+    const loginBtn    = document.getElementById('login-btn');
+    const userDisplay = document.getElementById('user-display');
+    const userBadge   = document.getElementById('username-badge');
+    const adminLink   = document.getElementById('admin-nav-link');
+    const adminMobile = document.getElementById('admin-mobile-link');
 
-      // 2. البحث عن المستخدم (في مصفوفة الفايربيز أو القائمة الثابتة USERS)
-      const user = USERS.find(u => u.username === username && u.password === password)
-                || firebaseAccounts.find(u => u.username === username && u.password === password);
-
-      if (!user) { 
-        errEl.style.display = 'block'; 
-        toast('خطأ: بيانات الدخول غير صحيحة');
-        return; 
+    if (session && session.username) {
+      loginBtn.style.display    = 'none';
+      userDisplay.style.display = 'flex';
+      userBadge.textContent     = session.username;
+      if (session.role === 'admin') {
+        if (adminLink)   adminLink.style.display   = 'inline';
+        if (adminMobile) adminMobile.style.display = 'block';
       }
-
-      // 3. نجاح تسجيل الدخول
-      errEl.style.display = 'none';
-      const session = { username: user.username, role: user.role };
-      lsSet(K.SESSION, session);
-      applySession(session);
-      closeLoginModal();
-      document.getElementById('login-form').reset();
-      
-      toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
-      
-      // إذا كان أدمن، قم بتحديث اللوحة بعد تسجيل الدخول
-      if (user.role === 'admin') { 
-        renderAdminPanel(); 
-      }
-
-    } catch (error) {
-      console.error("Login Error:", error);
-      toast('خطأ في الاتصال بالسيرفر، حاول مجدداً');
+    } else {
+      loginBtn.style.display    = '';
+      userDisplay.style.display = 'none';
+      userBadge.textContent     = '—';
+      if (adminLink)   adminLink.style.display   = 'none';
+      if (adminMobile) adminMobile.style.display = 'none';
     }
   }
 
@@ -1267,36 +1277,25 @@
   }
 
   // ── Admin Panel ────────────────────────────────────────────────────────────
-  async function renderAdminPanel() {
+  function renderAdminPanel() {
     if (!isAdmin()) return;
-    
-    // استخدام await لجلب البيانات بالتوازي لزيادة السرعة
-    await Promise.all([
-        renderAdminMembers(),
-        renderAdminReports(),
-        renderAdminAchievements(),
-        renderAdminAccounts()
-    ]);
-
+    renderAdminMembers();
+    renderAdminReports();
+    renderAdminAchievements();
+    renderAdminAccounts();
     const ann = lsGet(K.ANNOUNCE);
     if (ann && ann.message) {
-        const el = document.getElementById('ann-text');
-        if (el) el.value = ann.message;
+      const el = document.getElementById('ann-text');
+      if (el) el.value = ann.message;
     }
-}
+  }
 
-async function renderAdminMembers() {
+  function renderAdminMembers() {
+    const members = lsGet(K.MEMBERS) || [];
     const el = document.getElementById('admin-members-tbl');
     if (!el) return;
-
-    try {
-        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/members.json");
-        const data = await res.json();
-        const members = data ? Object.values(data) : [];
-
-        if (!members.length) { el.innerHTML = emptyAdmin('لا يوجد أعضاء'); return; }
-
-        el.innerHTML = `
+    if (!members.length) { el.innerHTML = emptyAdmin('لا يوجد أعضاء'); return; }
+    el.innerHTML = `
       <table class="admin-table">
         <thead><tr>
           <th>الاسم</th><th>الرتبة</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
@@ -1314,23 +1313,14 @@ async function renderAdminMembers() {
           </tr>`).join('')}
         </tbody>
       </table>`;
-    } catch (e) {
-        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
-    }
-}
+  }
 
-async function renderAdminReports() {
+  function renderAdminReports() {
+    const items = (lsGet(K.REPORTS) || []).slice().reverse();
     const el = document.getElementById('admin-reports-tbl');
     if (!el) return;
-
-    try {
-        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/reports.json");
-        const data = await res.json();
-        const items = data ? Object.values(data).reverse() : [];
-
-        if (!items.length) { el.innerHTML = emptyAdmin('لا توجد تقارير'); return; }
-
-        el.innerHTML = `
+    if (!items.length) { el.innerHTML = emptyAdmin('لا توجد تقارير'); return; }
+    el.innerHTML = `
       <table class="admin-table">
         <thead><tr><th>العنوان</th><th>التصنيف</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(r => `
@@ -1344,23 +1334,14 @@ async function renderAdminReports() {
           </tr>`).join('')}
         </tbody>
       </table>`;
-    } catch (e) {
-        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
-    }
-}
+  }
 
-async function renderAdminAchievements() {
+  function renderAdminAchievements() {
+    const items = lsGet(K.ACHIEVEMENTS) || [];
     const el = document.getElementById('admin-ach-tbl');
     if (!el) return;
-
-    try {
-        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/achievements.json");
-        const data = await res.json();
-        const items = data ? Object.values(data) : [];
-
-        if (!items.length) { el.innerHTML = emptyAdmin('لا توجد إنجازات'); return; }
-
-        el.innerHTML = `
+    if (!items.length) { el.innerHTML = emptyAdmin('لا توجد إنجازات'); return; }
+    el.innerHTML = `
       <table class="admin-table">
         <thead><tr><th>العنوان</th><th>التاريخ</th><th>صورة</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(a => `
@@ -1374,14 +1355,11 @@ async function renderAdminAchievements() {
           </tr>`).join('')}
         </tbody>
       </table>`;
-    } catch (e) {
-        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
-    }
-}
+  }
 
-function emptyAdmin(msg) {
+  function emptyAdmin(msg) {
     return `<div class="empty-state" style="padding:18px;font-size:13px;">${msg}</div>`;
-}
+  }
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
   function buildTicker() {
@@ -1494,119 +1472,52 @@ function emptyAdmin(msg) {
   }
 
   // ── Member Accounts ────────────────────────────────────────────────────────
-  // ── Member Accounts (النسخة المتزامنة سحابياً مع Firebase) ─────────────────
-  async function createMemberAccount() {
+  function createMemberAccount() {
     const username  = v('mac-user');
     const password  = v('mac-pass');
     const joinDate  = v('mac-join');
     const specialty = v('mac-spec');
-    
     if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
     if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
-
-    toast('جاري التحقق وإنشاء الحساب... ⏳');
-
-    try {
-      // 1. جلب الحسابات الحالية مباشرة من الفايربيز للتحقق من عدم تكرار الاسم
-      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/.");
-      const data = await res.json() || {};
-      
-      // تحويل كائن الفايربيز إلى مصفوفة للتعامل معها
-      const accounts = Object.keys(data).map(key => ({ fbKey: key, ...data[key] }));
-
-      // التحقق من أن الاسم غير محجوز من قِبل أي جهاز آخر
-      if (accounts.find(a => a.username === username)) { 
-        toast('اسم المستخدم موجود بالفعل أونلاين'); 
-        return; 
-      }
-
-      // حساب الـ ID الجديد تتابعياً
-      const id = accounts.length ? Math.max(...accounts.map(a => a.id || 0)) + 1 : 1;
-      const newAccount = { id, username, password, joinDate, specialty, role: 'member' };
-
-      // 2. رفع الحساب الجديد فوراً إلى الفايربيز
-      const saveRes = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAccount)
-      });
-
-      if (!saveRes.ok) throw new Error("فشل الرفع إلى السيرفر");
-
-      // تنظيف الخانات بعد النجاح
-      ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { 
-        const el = document.getElementById(fid); if(el) el.value=''; 
-      });
-
-      // إعادة تحديث الجدول أونلاين فوراً
-      await renderAdminAccounts();
-      toast('تم إنشاء حساب العضو ورفعه للسيرفر بنجاح ✓');
-
-    } catch (error) {
-      console.error(error);
-      toast('حدث خطأ في الاتصال بقاعدة البيانات السحابية');
-    }
+    const accounts = lsGet(K.ACCOUNTS) || [];
+    if (accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
+    const id = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+    accounts.push({ id, username, password, joinDate, specialty, role: 'member' });
+    lsSet(K.ACCOUNTS, accounts);
+    ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
+    renderAdminAccounts();
+    toast('تم إنشاء حساب العضو: ' + username + ' ✓');
   }
 
-  async function renderAdminAccounts() {
+  function renderAdminAccounts() {
     if (!isAdmin()) return;
+    const accounts = lsGet(K.ACCOUNTS) || [];
     const el = document.getElementById('admin-accounts-tbl');
     if (!el) return;
-
-    try {
-      // جلب البيانات الحية مباشرة من الفايربيز
-      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
-      const data = await res.json();
-      
-      if (!data) { 
-        el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد على السيرفر'); 
-        return; 
-      }
-
-      // تحويل الكائن إلى مصفوفة مع حقن الـ fbKey (المفتاح الفريد الخاص بـ Firebase للتحكم بالحذف)
-      const accounts = Object.keys(data).map(key => ({ fbKey: key, ...data[key] }));
-
-      el.innerHTML = `
-        <table class="admin-table">
-          <thead><tr>
-            <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
-          </tr></thead>
-          <tbody>${accounts.map(a => `
-            <tr>
-              <td>${esc(a.username)}</td>
-              <td>${esc(a.joinDate)}</td>
-              <td>${esc(a.specialty)}</td>
-              <td><div class="admin-actions">
-                <button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.fbKey}')">حذف</button>
-              </div></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>`;
-    } catch (error) {
-      console.error(error);
-      el.innerHTML = emptyAdmin('خطأ في جلب البيانات الحية من السيرفر');
-    }
+    if (!accounts.length) { el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد'); return; }
+    el.innerHTML = `
+      <table class="admin-table">
+        <thead><tr>
+          <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
+        </tr></thead>
+        <tbody>${accounts.map(a => `
+          <tr>
+            <td>${esc(a.username)}</td>
+            <td>${esc(a.joinDate)}</td>
+            <td>${esc(a.specialty)}</td>
+            <td><div class="admin-actions">
+              <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
   }
 
-  async function deleteAccount(fbKey) {
-    if (!confirm('هل تريد حذف هذا الحساب نهائياً من السيرفر السحابي؟')) return;
-    
-    toast('جاري الحذف من السيرفر... ⏳');
-    
-    try {
-      // إرسال طلب DELETE للمسار المباشر للحساب عن طريق مفتاحه الفريد
-      const res = await fetch(`https://ballas-web-default-rtdb.firebaseio.com/accounts/${fbKey}.json`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) throw new Error("فشل الحذف السحابي");
-
-      await renderAdminAccounts();
-      toast('تم حذف الحساب نهائياً من السيرفر المشترك ✓');
-    } catch (error) {
-      console.error(error);
-      toast('فشل حذف الحساب، تأكد من اتصال الإنترنت');
-    }
+  function deleteAccount(id) {
+    if (!confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
+    lsSet(K.ACCOUNTS, (lsGet(K.ACCOUNTS)||[]).filter(a => a.id !== id));
+    renderAdminAccounts();
+    toast('تم حذف الحساب');
   }
 
   // ── Announcement Banner ────────────────────────────────────────────────────
@@ -1693,13 +1604,7 @@ function emptyAdmin(msg) {
   function pad(n)       { return String(n).padStart(2,'0'); }
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
-<script src="/js/app.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // الآن المتصفح ضمن أن كل شيء جاهز
-    if (typeof restoreSession === 'function') {
-        restoreSession();
-    }
-  });
-</script>
+  document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
 </html>
