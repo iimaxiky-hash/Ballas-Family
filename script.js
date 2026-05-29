@@ -89,6 +89,21 @@ async function renderAdminAccounts() {
     }
 }
 
+// أضف هذه الدالة إلى ملف script.js ليعمل زر الدخول
+function openLoginModal() {
+    const modal = document.getElementById('login-modal'); // تأكد من مطابقة المعرف (ID) لنموذج الدخول
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        console.error("نموذج تسجيل الدخول (login-modal) غير موجود في الصفحة");
+    }
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'none';
+}
+
 // ── INITIALIZATION (نقطة الربط) ──────────────────────────────────────────
 // ملاحظة: نستخدم هذا لربط الأحداث دون حذف دوالك القديمة (initApp)
 document.addEventListener('DOMContentLoaded', () => {
