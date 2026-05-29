@@ -1277,25 +1277,36 @@
   }
 
   // ── Admin Panel ────────────────────────────────────────────────────────────
-  function renderAdminPanel() {
+  async function renderAdminPanel() {
     if (!isAdmin()) return;
-    renderAdminMembers();
-    renderAdminReports();
-    renderAdminAchievements();
-    renderAdminAccounts();
+    
+    // استخدام await لجلب البيانات بالتوازي لزيادة السرعة
+    await Promise.all([
+        renderAdminMembers(),
+        renderAdminReports(),
+        renderAdminAchievements(),
+        renderAdminAccounts()
+    ]);
+
     const ann = lsGet(K.ANNOUNCE);
     if (ann && ann.message) {
-      const el = document.getElementById('ann-text');
-      if (el) el.value = ann.message;
+        const el = document.getElementById('ann-text');
+        if (el) el.value = ann.message;
     }
-  }
+}
 
-  function renderAdminMembers() {
-    const members = lsGet(K.MEMBERS) || [];
+async function renderAdminMembers() {
     const el = document.getElementById('admin-members-tbl');
     if (!el) return;
-    if (!members.length) { el.innerHTML = emptyAdmin('لا يوجد أعضاء'); return; }
-    el.innerHTML = `
+
+    try {
+        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/members.json");
+        const data = await res.json();
+        const members = data ? Object.values(data) : [];
+
+        if (!members.length) { el.innerHTML = emptyAdmin('لا يوجد أعضاء'); return; }
+
+        el.innerHTML = `
       <table class="admin-table">
         <thead><tr>
           <th>الاسم</th><th>الرتبة</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
@@ -1313,14 +1324,23 @@
           </tr>`).join('')}
         </tbody>
       </table>`;
-  }
+    } catch (e) {
+        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
+    }
+}
 
-  function renderAdminReports() {
-    const items = (lsGet(K.REPORTS) || []).slice().reverse();
+async function renderAdminReports() {
     const el = document.getElementById('admin-reports-tbl');
     if (!el) return;
-    if (!items.length) { el.innerHTML = emptyAdmin('لا توجد تقارير'); return; }
-    el.innerHTML = `
+
+    try {
+        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/reports.json");
+        const data = await res.json();
+        const items = data ? Object.values(data).reverse() : [];
+
+        if (!items.length) { el.innerHTML = emptyAdmin('لا توجد تقارير'); return; }
+
+        el.innerHTML = `
       <table class="admin-table">
         <thead><tr><th>العنوان</th><th>التصنيف</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(r => `
@@ -1334,14 +1354,23 @@
           </tr>`).join('')}
         </tbody>
       </table>`;
-  }
+    } catch (e) {
+        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
+    }
+}
 
-  function renderAdminAchievements() {
-    const items = lsGet(K.ACHIEVEMENTS) || [];
+async function renderAdminAchievements() {
     const el = document.getElementById('admin-ach-tbl');
     if (!el) return;
-    if (!items.length) { el.innerHTML = emptyAdmin('لا توجد إنجازات'); return; }
-    el.innerHTML = `
+
+    try {
+        const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/achievements.json");
+        const data = await res.json();
+        const items = data ? Object.values(data) : [];
+
+        if (!items.length) { el.innerHTML = emptyAdmin('لا توجد إنجازات'); return; }
+
+        el.innerHTML = `
       <table class="admin-table">
         <thead><tr><th>العنوان</th><th>التاريخ</th><th>صورة</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(a => `
@@ -1355,11 +1384,14 @@
           </tr>`).join('')}
         </tbody>
       </table>`;
-  }
+    } catch (e) {
+        el.innerHTML = emptyAdmin('خطأ في الاتصال بالسيرفر');
+    }
+}
 
-  function emptyAdmin(msg) {
+function emptyAdmin(msg) {
     return `<div class="empty-state" style="padding:18px;font-size:13px;">${msg}</div>`;
-  }
+}
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
   function buildTicker() {
