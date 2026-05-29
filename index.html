@@ -1693,7 +1693,14 @@ function emptyAdmin(msg) {
   function pad(n)       { return String(n).padStart(2,'0'); }
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', initApp);
-  </script>
-</body>
+<script src="script.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // الآن المتصفح ضمن أن كل شيء جاهز
+    if (typeof restoreSession === 'function') {
+        restoreSession();
+    }
+  });
+</script>
 </html>
