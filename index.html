@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -11,6 +10,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
   <style>
+    /* ── Design Tokens ──────────────────────────────────────────────────────── */
     :root {
       --primary:       #7c3aed;
       --primary-light: #9f5ff5;
@@ -34,6 +34,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       --glow-text:     0 0 14px rgba(124,58,237,0.85),0 0 30px rgba(124,58,237,0.38);
     }
 
+    /* ── Reset ──────────────────────────────────────────────────────────────── */
     *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
     html { scroll-behavior:smooth; }
     body {
@@ -50,8 +51,10 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     ::-webkit-scrollbar-track { background:var(--bg); }
     ::-webkit-scrollbar-thumb { background:var(--primary); border-radius:3px; }
 
+    /* ── Sticky top wrapper ─────────────────────────────────────────────────── */
     #sticky-top { position:sticky; top:0; z-index:200; }
 
+    /* ── Urgent Banner ──────────────────────────────────────────────────────── */
     #urgent-banner {
       display:none;
       width:100%;
@@ -68,9 +71,10 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     #urgent-banner.active { display:block; }
     @keyframes bannerPulse {
       0%,100% { box-shadow:0 0 10px rgba(220,38,38,.3); }
-      50%      { box-shadow:0 0 28px rgba(220,38,38,.7),inset 0 0 14px rgba(220,38,38,.1); }
+      50%     { box-shadow:0 0 28px rgba(220,38,38,.7),inset 0 0 14px rgba(220,38,38,.1); }
     }
 
+    /* ── Header ─────────────────────────────────────────────────────────────── */
     header {
       background:rgba(8,8,14,.9);
       backdrop-filter:blur(22px);
@@ -110,7 +114,10 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       white-space:nowrap;
     }
     nav a:hover { color:#fff; }
-    nav a.active { color:#fff; text-shadow:var(--glow-text); }
+    nav a.active {
+      color:#fff;
+      text-shadow:var(--glow-text);
+    }
     nav a.active::after {
       content:'';
       position:absolute;
@@ -120,6 +127,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     }
     nav a.admin-link { color:var(--accent); }
 
+    /* ── Buttons ─────────────────────────────────────────────────────────────── */
     .btn {
       padding:7px 16px;
       font-size:13px;
@@ -132,130 +140,228 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       align-items:center;
       gap:6px;
     }
-    .btn-primary { background:var(--primary); color:#fff; border-color:var(--primary-light); box-shadow:var(--glow-sm); }
+    .btn-primary {
+      background:var(--primary);
+      color:#fff;
+      border-color:var(--primary-light);
+      box-shadow:var(--glow-sm);
+    }
     .btn-primary:hover { background:var(--primary-light); box-shadow:var(--glow); }
-    .btn-outline { background:transparent; color:var(--accent); border-color:var(--border); }
+    .btn-outline {
+      background:transparent;
+      color:var(--accent);
+      border-color:var(--border);
+    }
     .btn-outline:hover { border-color:var(--primary); color:#fff; box-shadow:var(--glow-sm); }
-    .btn-danger { background:var(--danger-bg); color:var(--danger-text); border-color:var(--danger-border); }
+    .btn-danger {
+      background:var(--danger-bg);
+      color:var(--danger-text);
+      border-color:var(--danger-border);
+    }
     .btn-danger:hover { background:rgba(220,38,38,.28); }
-    .btn-success { background:var(--success-bg); color:var(--success-text); border-color:var(--success-border); }
+    .btn-success {
+      background:var(--success-bg);
+      color:var(--success-text);
+      border-color:var(--success-border);
+    }
     .btn-success:hover { background:rgba(34,197,94,.24); }
     .btn-sm { padding:4px 11px; font-size:11px; }
     .btn-full { width:100%; justify-content:center; padding:13px; }
 
+    /* ── Auth area ───────────────────────────────────────────────────────────── */
     .header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
     .user-display { display:flex; align-items:center; gap:10px; }
     .username-badge {
-      font-size:13px; font-weight:700; color:var(--accent);
-      padding:4px 12px; border:1px solid var(--border);
-      background:rgba(124,58,237,.1); border-radius:2px; white-space:nowrap;
+      font-size:13px;
+      font-weight:700;
+      color:var(--accent);
+      padding:4px 12px;
+      border:1px solid var(--border);
+      background:rgba(124,58,237,.1);
+      border-radius:2px;
+      white-space:nowrap;
     }
-    .hamburger { display:none; background:transparent; border:1px solid var(--border); color:var(--text); padding:6px 10px; font-size:18px; }
+    .hamburger {
+      display:none;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:6px 10px;
+      font-size:18px;
+    }
 
+    /* ── Mobile menu ─────────────────────────────────────────────────────────── */
     #mobile-menu {
-      display:none; position:fixed;
+      display:none;
+      position:fixed;
       top:64px; left:0; right:0;
       background:var(--bg-surface);
       border-bottom:1px solid var(--border);
-      padding:20px; z-index:190;
-      flex-direction:column; gap:4px;
+      padding:20px;
+      z-index:190;
+      flex-direction:column;
+      gap:4px;
     }
     #mobile-menu.open { display:flex; }
     #mobile-menu a {
-      font-size:15px; font-weight:700; color:var(--text-muted);
-      padding:10px 0; border-bottom:1px solid var(--border);
-      cursor:pointer; transition:color .2s;
+      font-size:15px;
+      font-weight:700;
+      color:var(--text-muted);
+      padding:10px 0;
+      border-bottom:1px solid var(--border);
+      cursor:pointer;
+      transition:color .2s;
     }
     #mobile-menu a:hover,#mobile-menu a.active { color:#fff; }
     #mobile-menu a:last-child { border-bottom:none; }
 
+    /* ── Modals ──────────────────────────────────────────────────────────────── */
     .modal-overlay {
       position:fixed; inset:0;
       background:rgba(0,0,0,.72);
       z-index:500;
-      display:flex; align-items:center; justify-content:center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       backdrop-filter:blur(6px);
     }
     .modal-overlay.hidden { display:none; }
     .modal {
       background:var(--bg-surface);
       border:1px solid var(--border);
-      padding:40px; width:100%; max-width:430px;
-      box-shadow:var(--glow); position:relative;
-      max-height:90vh; overflow-y:auto;
+      padding:40px;
+      width:100%;
+      max-width:430px;
+      box-shadow:var(--glow);
+      position:relative;
+      max-height:90vh;
+      overflow-y:auto;
     }
     .modal-title {
-      font-size:1.3rem; font-weight:900; color:#fff;
-      text-shadow:var(--glow-text); letter-spacing:.15em;
-      margin-bottom:28px; text-align:center;
+      font-size:1.3rem;
+      font-weight:900;
+      color:#fff;
+      text-shadow:var(--glow-text);
+      letter-spacing:.15em;
+      margin-bottom:28px;
+      text-align:center;
     }
     .modal-close {
       position:absolute; top:14px; left:14px;
-      background:none; border:none; color:var(--text-muted);
-      font-size:22px; line-height:1; padding:4px 6px; transition:color .2s;
+      background:none; border:none;
+      color:var(--text-muted);
+      font-size:22px;
+      line-height:1;
+      padding:4px 6px;
+      transition:color .2s;
     }
     .modal-close:hover { color:#fff; }
 
+    /* ── Toast ───────────────────────────────────────────────────────────────── */
     #toast {
-      position:fixed; bottom:28px; left:50%;
+      position:fixed;
+      bottom:28px; left:50%;
       transform:translateX(-50%) translateY(20px);
-      background:var(--bg-surface); border:1px solid var(--primary);
-      color:#fff; padding:13px 28px; font-size:14px; font-weight:700;
-      box-shadow:var(--glow); z-index:1000; opacity:0; pointer-events:none;
-      text-align:center; transition:opacity .28s,transform .28s;
-      white-space:nowrap; max-width:90vw;
+      background:var(--bg-surface);
+      border:1px solid var(--primary);
+      color:#fff;
+      padding:13px 28px;
+      font-size:14px;
+      font-weight:700;
+      box-shadow:var(--glow);
+      z-index:1000;
+      opacity:0;
+      pointer-events:none;
+      text-align:center;
+      transition:opacity .28s,transform .28s;
+      white-space:nowrap;
+      max-width:90vw;
     }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
+    /* ── Forms ───────────────────────────────────────────────────────────────── */
     .form-group { margin-bottom:18px; }
     .form-label {
-      display:block; font-size:12px; font-weight:700;
-      color:var(--text-muted); letter-spacing:.09em;
-      margin-bottom:7px; text-transform:uppercase;
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      color:var(--text-muted);
+      letter-spacing:.09em;
+      margin-bottom:7px;
+      text-transform:uppercase;
     }
     .form-input,.form-textarea,.form-select {
-      width:100%; background:rgba(255,255,255,.04);
-      border:1px solid var(--border); color:var(--text);
-      padding:10px 14px; font-size:14px; font-family:'Cairo',sans-serif;
-      border-radius:2px; transition:border-color .2s,box-shadow .2s; direction:rtl;
+      width:100%;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:10px 14px;
+      font-size:14px;
+      font-family:'Cairo',sans-serif;
+      border-radius:2px;
+      transition:border-color .2s,box-shadow .2s;
+      direction:rtl;
     }
     .form-input:focus,.form-textarea:focus,.form-select:focus {
-      outline:none; border-color:var(--primary);
+      outline:none;
+      border-color:var(--primary);
       box-shadow:0 0 0 2px rgba(124,58,237,.14);
     }
     .form-textarea { resize:vertical; min-height:110px; }
     .form-select option { background:var(--bg-surface); }
-    .form-error { color:var(--danger-text); font-size:13px; margin-bottom:12px; display:none; }
+    .form-error {
+      color:var(--danger-text);
+      font-size:13px;
+      margin-bottom:12px;
+      display:none;
+    }
     .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
+    /* ── Layout helpers ──────────────────────────────────────────────────────── */
     .container { max-width:1200px; margin:0 auto; padding:0 24px; }
     .section-inner { padding:80px 0; }
     .section-header { text-align:center; margin-bottom:56px; }
     .luxury-divider {
       height:1px;
       background:linear-gradient(90deg,transparent,var(--primary),transparent);
-      opacity:.65; width:160px; margin:0 auto;
+      opacity:.65;
+      width:160px;
+      margin:0 auto;
     }
     .section-title {
-      font-size:2.4rem; font-weight:900; letter-spacing:.22em;
-      color:#fff; text-shadow:var(--glow-text);
-      text-transform:uppercase; margin:18px 0 8px;
+      font-size:2.4rem;
+      font-weight:900;
+      letter-spacing:.22em;
+      color:#fff;
+      text-shadow:var(--glow-text);
+      text-transform:uppercase;
+      margin:18px 0 8px;
     }
-    .section-sub { color:var(--text-muted); font-size:13px; letter-spacing:.18em; margin-top:12px; }
+    .section-sub {
+      color:var(--text-muted);
+      font-size:13px;
+      letter-spacing:.18em;
+      margin-top:12px;
+    }
     .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); font-size:14px; }
     .empty-state-icon { font-size:48px; display:block; margin-bottom:16px; opacity:.3; }
     .fade-in { animation:fadeIn .38s ease-out; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-    /* ── FIX: كل الأقسام مخفية بـ CSS ── */
+    /* ── Sections default hidden ─────────────────────────────────────────────── */
     .page-section { display:none; }
     .page-section.active { display:block; }
 
+    /* ── HOME section ────────────────────────────────────────────────────────── */
     #section-home.active { display:block; }
     .home-hero {
-      min-height:calc(100vh - 64px); position:relative;
-      overflow:hidden; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
+      min-height:calc(100vh - 64px);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
     }
     .grid-bg {
       position:absolute; inset:0;
@@ -268,48 +374,94 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       pointer-events:none;
     }
     .glow-blob {
-      position:absolute; top:32%; left:50%;
+      position:absolute;
+      top:32%; left:50%;
       transform:translate(-50%,-50%);
       width:600px; height:400px;
       background:rgba(124,58,237,.07);
-      border-radius:50%; filter:blur(120px); pointer-events:none;
+      border-radius:50%;
+      filter:blur(120px);
+      pointer-events:none;
     }
     .ticker-wrap {
-      position:absolute; top:0; left:0; right:0;
+      position:absolute;
+      top:0; left:0; right:0;
       background:rgba(124,58,237,.08);
       border-bottom:1px solid rgba(124,58,237,.18);
-      padding:8px 0; overflow:hidden; z-index:2;
+      padding:8px 0;
+      overflow:hidden;
+      z-index:2;
     }
-    .ticker-track { display:inline-block; white-space:nowrap; animation:ticker 32s linear infinite; }
-    .ticker-item { display:inline-block; color:rgba(255,255,255,.7); font-size:11px; letter-spacing:.15em; margin:0 36px; }
+    .ticker-track {
+      display:inline-block;
+      white-space:nowrap;
+      animation:ticker 32s linear infinite;
+    }
+    .ticker-item {
+      display:inline-block;
+      color:rgba(255,255,255,.7);
+      font-size:11px;
+      letter-spacing:.15em;
+      margin:0 36px;
+    }
     .ticker-dot { color:var(--primary); font-weight:900; margin-left:7px; }
     .ticker-date { color:var(--accent); margin-left:7px; opacity:.8; }
     @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-
     .hero-content {
-      position:relative; z-index:3; text-align:center;
-      display:flex; flex-direction:column; align-items:center;
-      gap:18px; padding:80px 24px 40px; width:100%;
+      position:relative;
+      z-index:3;
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:18px;
+      padding:80px 24px 40px;
+      width:100%;
     }
     .hero-title {
-      font-size:clamp(5rem,14vw,12rem); font-weight:900; letter-spacing:.3em;
+      font-size:clamp(5rem,14vw,12rem);
+      font-weight:900;
+      letter-spacing:.3em;
       background:linear-gradient(to bottom,#fff,rgba(255,255,255,.82),rgba(124,58,237,.55));
-      -webkit-background-clip:text; background-clip:text;
+      -webkit-background-clip:text;
+      background-clip:text;
       -webkit-text-fill-color:transparent;
       filter:drop-shadow(0 0 28px rgba(124,58,237,.5));
-      line-height:1; user-select:none;
+      line-height:1;
+      user-select:none;
     }
-    .hero-sub { font-size:1.05rem; font-weight:700; color:var(--accent); letter-spacing:.3em; text-transform:uppercase; }
-    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; max-width:680px; width:100%; margin-top:36px; }
+    .hero-sub {
+      font-size:1.05rem;
+      font-weight:700;
+      color:var(--accent);
+      letter-spacing:.3em;
+      text-transform:uppercase;
+    }
+    .hero-stats {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      max-width:680px;
+      width:100%;
+      margin-top:36px;
+    }
     .stat-card {
-      display:flex; flex-direction:column; align-items:center;
-      padding:22px 12px; background:var(--bg-card);
-      border:1px solid var(--border); position:relative; overflow:hidden; transition:all .3s;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:22px 12px;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      position:relative;
+      overflow:hidden;
+      transition:all .3s;
     }
     .stat-card::before {
-      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:1px;
       background:linear-gradient(90deg,transparent,var(--primary),transparent);
-      opacity:0; transition:opacity .3s;
+      opacity:0;
+      transition:opacity .3s;
     }
     .stat-card:hover::before { opacity:1; }
     .stat-card:hover { box-shadow:var(--glow-sm); }
@@ -317,12 +469,24 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     .stat-num.green { color:#4ade80; text-shadow:0 0 12px rgba(74,222,128,.7); }
     .stat-lbl { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:.1em; text-transform:uppercase; margin-top:6px; text-align:center; }
 
-    .members-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:22px; }
+    /* ── Members ─────────────────────────────────────────────────────────────── */
+    .members-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:22px;
+    }
     .member-card {
-      background:var(--bg-card); border:1px solid var(--border);
-      padding:24px 18px; display:flex; flex-direction:column;
-      align-items:center; text-align:center; gap:10px;
-      position:relative; overflow:hidden; transition:all .28s;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:24px 18px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:10px;
+      position:relative;
+      overflow:hidden;
+      transition:all .28s;
     }
     .member-card::before {
       content:''; position:absolute; top:0; left:0; right:0; height:1px;
@@ -330,27 +494,54 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     }
     .member-card:hover { border-color:var(--border-hover); box-shadow:var(--glow-sm); transform:translateY(-2px); }
     .member-avatar {
-      width:62px; height:62px; border-radius:50%;
-      background:rgba(124,58,237,.18); border:2px solid rgba(124,58,237,.6);
+      width:62px; height:62px;
+      border-radius:50%;
+      background:rgba(124,58,237,.18);
+      border:2px solid rgba(124,58,237,.6);
       display:flex; align-items:center; justify-content:center;
-      font-size:17px; font-weight:900; color:#fff; text-shadow:var(--glow-text);
+      font-size:17px; font-weight:900; color:#fff;
+      text-shadow:var(--glow-text);
     }
     .member-name { font-size:14px; font-weight:900; color:#fff; letter-spacing:.04em; }
     .member-rank {
-      font-size:10px; font-weight:700; letter-spacing:.14em; color:var(--accent);
-      background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.28);
-      padding:3px 10px; text-transform:uppercase;
+      font-size:10px; font-weight:700; letter-spacing:.14em;
+      color:var(--accent);
+      background:rgba(124,58,237,.1);
+      border:1px solid rgba(124,58,237,.28);
+      padding:3px 10px;
+      text-transform:uppercase;
     }
-    .member-info { width:100%; border-top:1px solid var(--border); padding-top:10px; display:flex; flex-direction:column; gap:7px; }
+    .member-info {
+      width:100%;
+      border-top:1px solid var(--border);
+      padding-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
     .info-row { display:flex; justify-content:space-between; align-items:center; }
     .info-lbl { font-size:11px; color:var(--text-muted); }
     .info-val { font-size:11px; font-weight:700; color:rgba(255,255,255,.78); }
     .info-val.accent { color:var(--accent); }
 
-    .achievements-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
-    .ach-card { background:var(--bg-card); border:1px solid var(--border); overflow:hidden; position:relative; transition:all .28s; }
+    /* ── Achievements Gallery ────────────────────────────────────────────────── */
+    .achievements-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+      gap:18px;
+    }
+    .ach-card {
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      overflow:hidden;
+      position:relative;
+      transition:all .28s;
+    }
     .ach-card:hover { border-color:var(--border-hover); box-shadow:var(--glow); }
-    .ach-img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+    .ach-img {
+      width:100%; aspect-ratio:16/9;
+      object-fit:cover; display:block;
+    }
     .ach-placeholder {
       width:100%; aspect-ratio:16/9;
       background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(124,58,237,.04));
@@ -360,16 +551,28 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     .ach-info { padding:14px 16px; }
     .ach-title { font-size:14px; font-weight:700; color:#fff; margin-bottom:5px; }
     .ach-date { font-size:11px; color:var(--text-muted); }
-    .ach-glow { position:absolute; inset:-1px; border:1px solid var(--primary); opacity:0; pointer-events:none; transition:opacity .28s; box-shadow:var(--glow); }
+    .ach-glow {
+      position:absolute; inset:-1px;
+      border:1px solid var(--primary);
+      opacity:0; pointer-events:none;
+      transition:opacity .28s;
+      box-shadow:var(--glow);
+    }
     .ach-card:hover .ach-glow { opacity:.45; }
 
+    /* ── Reports ─────────────────────────────────────────────────────────────── */
     .reports-list { display:flex; flex-direction:column; gap:14px; max-width:880px; margin:0 auto; }
     .report-card {
-      background:var(--bg-card); border:1px solid var(--border);
-      padding:22px 24px 22px 20px; position:relative; overflow:hidden; transition:border-color .28s;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:22px 24px 22px 20px;
+      position:relative;
+      overflow:hidden;
+      transition:border-color .28s;
     }
     .report-card::before {
-      content:''; position:absolute; right:0; top:0; bottom:0; width:3px;
+      content:''; position:absolute;
+      right:0; top:0; bottom:0; width:3px;
       background:var(--primary); box-shadow:var(--glow-sm);
     }
     .report-card:hover { border-color:var(--border-hover); }
@@ -378,16 +581,28 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     .report-meta { display:flex; align-items:center; gap:10px; flex-shrink:0; }
     .report-date { font-size:11px; color:var(--text-muted); white-space:nowrap; }
     .report-cat {
-      font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--accent);
-      background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.28);
+      font-size:10px; font-weight:700; letter-spacing:.1em;
+      color:var(--accent);
+      background:rgba(124,58,237,.1);
+      border:1px solid rgba(124,58,237,.28);
       padding:2px 9px; text-transform:uppercase;
     }
     .report-body { font-size:13px; color:rgba(255,255,255,.6); line-height:1.75; }
 
-    .stats-sec-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:18px; }
+    /* ── Stats section ───────────────────────────────────────────────────────── */
+    .stats-sec-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+      gap:18px;
+    }
     .stats-sec-item {
-      background:var(--bg-card); border:1px solid var(--border);
-      padding:28px 18px; text-align:center; position:relative; overflow:hidden; transition:all .28s;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:28px 18px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      transition:all .28s;
     }
     .stats-sec-item::before {
       content:''; position:absolute; top:0; left:0; right:0; height:1px;
@@ -398,42 +613,69 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     .stats-sec-num.green { color:#4ade80; text-shadow:0 0 12px rgba(74,222,128,.7); }
     .stats-sec-lbl { font-size:11px; color:var(--text-muted); letter-spacing:.12em; text-transform:uppercase; margin-top:8px; }
 
-    .join-card { max-width:600px; margin:0 auto; background:var(--bg-card); border:1px solid var(--border); padding:38px; }
+    /* ── Join form ───────────────────────────────────────────────────────────── */
+    .join-card {
+      max-width:600px; margin:0 auto;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:38px;
+    }
 
+    /* ── Admin Panel ─────────────────────────────────────────────────────────── */
     #section-admin { background:rgba(124,58,237,.02); border-top:1px solid rgba(124,58,237,.25); }
-    .admin-section { background:var(--bg-card); border:1px solid var(--border); padding:26px; margin-bottom:22px; }
+    .admin-section {
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:26px;
+      margin-bottom:22px;
+    }
     .admin-section-title {
-      font-size:15px; font-weight:700; color:var(--accent);
-      letter-spacing:.1em; margin-bottom:18px; padding-bottom:12px;
-      border-bottom:1px solid var(--border); text-transform:uppercase;
+      font-size:15px; font-weight:700;
+      color:var(--accent);
+      letter-spacing:.1em;
+      margin-bottom:18px;
+      padding-bottom:12px;
+      border-bottom:1px solid var(--border);
+      text-transform:uppercase;
     }
     .admin-table { width:100%; border-collapse:collapse; font-size:13px; }
     .admin-table th {
       text-align:right; padding:10px 12px;
-      background:rgba(124,58,237,.1); color:var(--accent);
-      font-weight:700; letter-spacing:.05em; border-bottom:1px solid var(--border);
+      background:rgba(124,58,237,.1);
+      color:var(--accent); font-weight:700;
+      letter-spacing:.05em;
+      border-bottom:1px solid var(--border);
     }
     .admin-table td { padding:10px 12px; border-bottom:1px solid rgba(124,58,237,.06); }
     .admin-table tr:hover td { background:rgba(124,58,237,.04); }
     .admin-actions { display:flex; gap:6px; justify-content:flex-end; }
 
-    footer { border-top:1px solid var(--border); padding:30px 24px; margin-top:auto; }
+    /* ── Footer ──────────────────────────────────────────────────────────────── */
+    footer {
+      border-top:1px solid var(--border);
+      padding:30px 24px;
+      margin-top:auto;
+    }
     .footer-inner {
       max-width:1200px; margin:0 auto;
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex; align-items:center;
+      justify-content:space-between;
       gap:20px; flex-wrap:wrap;
     }
-    .footer-logo { font-size:1.9rem; font-weight:900; letter-spacing:.3em; color:rgba(124,58,237,.38); text-shadow:var(--glow-text); user-select:none; }
+    .footer-logo {
+      font-size:1.9rem; font-weight:900;
+      letter-spacing:.3em;
+      color:rgba(124,58,237,.38);
+      text-shadow:var(--glow-text);
+      user-select:none;
+    }
     .footer-text { font-size:12px; color:var(--text-muted); letter-spacing:.14em; }
 
-    /* ── تنبيه الأمان ── */
-    .security-note {
-      font-size:11px; color:var(--text-muted);
-      background:rgba(220,38,38,.07); border:1px solid rgba(220,38,38,.2);
-      padding:8px 12px; margin-top:10px; border-radius:2px;
+    /* ── Responsive ──────────────────────────────────────────────────────────── */
+    @media(max-width:820px) {
+      nav { display:none; }
+      .hamburger { display:block; }
     }
-
-    @media(max-width:820px) { nav { display:none; } .hamburger { display:block; } }
     @media(max-width:600px) {
       .hero-stats { grid-template-columns:repeat(2,1fr); }
       .form-grid-2 { grid-template-columns:1fr; }
@@ -447,12 +689,14 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
 </head>
 <body>
 
+  <!-- ── Sticky top: banner + header ──────────────────────────────────────── -->
   <div id="sticky-top">
     <div id="urgent-banner">
       <span>🚨 تعميم عاجل: </span><span id="banner-msg"></span>
     </div>
     <header>
       <span class="logo" onclick="showSection('home')">BALLAS</span>
+
       <nav id="main-nav">
         <a data-section="home"         onclick="navClick('home')"         class="active">الرئيسية</a>
         <a data-section="members"      onclick="navClick('members')">الأعضاء</a>
@@ -460,8 +704,9 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
         <a data-section="stats"        onclick="navClick('stats')">الإحصائيات</a>
         <a data-section="reports"      onclick="navClick('reports')">التقارير</a>
         <a data-section="join"         onclick="navClick('join')">انضم</a>
-        <a data-section="admin" onclick="navClick('admin')" id="admin-nav-link" class="admin-link" style="display:none;">لوحة الإدارة</a>
+        <a data-section="admin"        onclick="navClick('admin')" id="admin-nav-link" class="admin-link" style="display:none;">لوحة الإدارة</a>
       </nav>
+
       <div class="header-right">
         <div id="auth-area">
           <button class="btn btn-outline" id="login-btn" onclick="openLoginModal()">دخول</button>
@@ -475,6 +720,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     </header>
   </div>
 
+  <!-- ── Mobile menu ───────────────────────────────────────────────────────── -->
   <div id="mobile-menu">
     <a data-section="home"         onclick="navClick('home');closeMobile()">الرئيسية</a>
     <a data-section="members"      onclick="navClick('members');closeMobile()">الأعضاء</a>
@@ -482,67 +728,89 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     <a data-section="stats"        onclick="navClick('stats');closeMobile()">الإحصائيات</a>
     <a data-section="reports"      onclick="navClick('reports');closeMobile()">التقارير</a>
     <a data-section="join"         onclick="navClick('join');closeMobile()">انضم</a>
-    <a data-section="admin" onclick="navClick('admin');closeMobile()" id="admin-mobile-link" style="display:none;">لوحة الإدارة</a>
+    <a data-section="admin"        onclick="navClick('admin');closeMobile()" id="admin-mobile-link" style="display:none;">لوحة الإدارة</a>
   </div>
 
-  <!-- Login Modal -->
+  <!-- ── Login Modal ───────────────────────────────────────────────────────── -->
   <div class="modal-overlay hidden" id="login-modal">
     <div class="modal">
       <button class="modal-close" onclick="closeLoginModal()">×</button>
       <div class="modal-title">دخول — BALLAS</div>
-      <div class="form-group">
-        <label class="form-label">اسم المستخدم</label>
-        <input type="text" id="login-user" class="form-input" placeholder="أدخل اسم المستخدم" autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label class="form-label">كلمة المرور</label>
-        <input type="password" id="login-pass" class="form-input" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <div class="form-error" id="login-err">اسم المستخدم أو كلمة المرور غير صحيحة</div>
-      <!-- FIX: إزالة <form> واستبدالها بـ onclick مباشر -->
-      <button class="btn btn-primary btn-full" onclick="handleLogin()">دخول</button>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">اسم المستخدم</label>
+          <input type="text" id="login-user" class="form-input" placeholder="أدخل اسم المستخدم" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <input type="password" id="login-pass" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="form-error" id="login-err">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+        <button type="submit" class="btn btn-primary btn-full">دخول</button>
+      </form>
     </div>
   </div>
 
-  <!-- Edit Member Modal -->
+  <!-- ── Edit Member Modal ─────────────────────────────────────────────────── -->
   <div class="modal-overlay hidden" id="edit-member-modal">
     <div class="modal" style="max-width:500px;">
       <button class="modal-close" onclick="closeEditModal()">×</button>
       <div class="modal-title" style="font-size:1.1rem;margin-bottom:20px;">تعديل بيانات العضو</div>
-      <input type="hidden" id="edit-id">
-      <div class="form-grid-2">
-        <div class="form-group"><label class="form-label">الاسم</label><input type="text" id="edit-name" class="form-input"></div>
-        <div class="form-group"><label class="form-label">الرتبة</label><input type="text" id="edit-rank" class="form-input"></div>
-        <div class="form-group"><label class="form-label">تاريخ الانضمام</label><input type="text" id="edit-join" class="form-input" placeholder="2024/03"></div>
-        <div class="form-group"><label class="form-label">التخصص</label><input type="text" id="edit-spec" class="form-input"></div>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="saveEditMember()">حفظ التعديلات</button>
+      <form id="edit-member-form" onsubmit="saveEditMember(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">الاسم</label>
+            <input type="text" id="edit-name" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">الرتبة</label>
+            <input type="text" id="edit-rank" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">تاريخ الانضمام</label>
+            <input type="text" id="edit-join" class="form-input" placeholder="2024/03" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">التخصص</label>
+            <input type="text" id="edit-spec" class="form-input" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">حفظ التعديلات</button>
+      </form>
     </div>
   </div>
 
+  <!-- ── Toast ─────────────────────────────────────────────────────────────── -->
   <div id="toast"></div>
 
+  <!-- ── Main content ──────────────────────────────────────────────────────── -->
   <main>
-    <!-- HOME -->
+
+    <!-- HOME ─────────────────────────────────────────────────────────────────── -->
     <section id="section-home" class="page-section active">
       <div class="home-hero">
         <div class="grid-bg"></div>
         <div class="glow-blob"></div>
-        <div class="ticker-wrap"><div class="ticker-track" id="ticker-track"></div></div>
+        <div class="ticker-wrap">
+          <div class="ticker-track" id="ticker-track"></div>
+        </div>
         <div class="hero-content">
           <div class="luxury-divider" style="width:180px;"></div>
           <h1 class="hero-title">BALLAS</h1>
           <div class="luxury-divider" style="width:240px;margin-top:6px;"></div>
           <p class="hero-sub">بالاس في القمة</p>
           <div style="margin-top:38px;">
-            <button class="btn btn-primary" style="padding:15px 42px;font-size:13px;letter-spacing:.25em;text-transform:uppercase;" onclick="showSection('join')">انضم الآن</button>
+            <button class="btn btn-primary" style="padding:15px 42px;font-size:13px;letter-spacing:.25em;text-transform:uppercase;" onclick="showSection('join')">
+              انضم الآن
+            </button>
           </div>
           <div class="hero-stats" id="home-stats"></div>
         </div>
       </div>
     </section>
 
-    <!-- MEMBERS -->
+    <!-- MEMBERS ──────────────────────────────────────────────────────────────── -->
     <section id="section-members" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -555,7 +823,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>
     </section>
 
-    <!-- ACHIEVEMENTS -->
+    <!-- ACHIEVEMENTS & WARS ──────────────────────────────────────────────────── -->
     <section id="section-achievements" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -568,7 +836,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>
     </section>
 
-    <!-- STATS -->
+    <!-- STATS ────────────────────────────────────────────────────────────────── -->
     <section id="section-stats" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -581,7 +849,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>
     </section>
 
-    <!-- REPORTS -->
+    <!-- REPORTS ──────────────────────────────────────────────────────────────── -->
     <section id="section-reports" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -594,7 +862,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>
     </section>
 
-    <!-- JOIN -->
+    <!-- JOIN ─────────────────────────────────────────────────────────────────── -->
     <section id="section-join" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -604,17 +872,30 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
           <div class="luxury-divider" style="width:180px;margin-top:18px;"></div>
         </div>
         <div class="join-card fade-in">
-          <div class="form-group"><label class="form-label">اسم الشخصية</label><input type="text" class="form-input" id="join-name" placeholder="اسمك في اللعبة"></div>
-          <div class="form-group"><label class="form-label">معرف الديسكورد</label><input type="text" class="form-input" id="join-discord" placeholder="مثال: username"></div>
-          <div class="form-group"><label class="form-label">سبب الانضمام</label><textarea class="form-textarea" id="join-reason" placeholder="لماذا تريد الانضمام إلى بالاس؟"></textarea></div>
-          <div class="form-group"><label class="form-label">مهاراتك وتخصصك</label><input type="text" class="form-input" id="join-skill" placeholder="مثال: قناص، طيار، مدرع..."></div>
-          <!-- FIX: بدون <form> -->
-          <button class="btn btn-primary btn-full" style="margin-top:8px;" onclick="handleJoin()">إرسال الطلب</button>
+          <form id="join-form" onsubmit="handleJoin(event)">
+            <div class="form-group">
+              <label class="form-label">اسم الشخصية</label>
+              <input type="text" class="form-input" id="join-name" placeholder="اسمك في اللعبة" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">معرف الديسكورد</label>
+              <input type="text" class="form-input" id="join-discord" placeholder="مثال: username">
+            </div>
+            <div class="form-group">
+              <label class="form-label">سبب الانضمام</label>
+              <textarea class="form-textarea" id="join-reason" placeholder="لماذا تريد الانضمام إلى بالاس؟" required></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">مهاراتك وتخصصك</label>
+              <input type="text" class="form-input" id="join-skill" placeholder="مثال: قناص، طيار، مدرع...">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">إرسال الطلب</button>
+          </form>
         </div>
       </div>
     </section>
 
-    <!-- ADMIN -->
+    <!-- ADMIN PANEL ──────────────────────────────────────────────────────────── -->
     <section id="section-admin" class="page-section">
       <div class="container section-inner">
         <div class="section-header">
@@ -624,29 +905,35 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
           <div class="luxury-divider" style="width:180px;margin-top:18px;"></div>
         </div>
 
+        <!-- Announcement control -->
         <div class="admin-section">
           <div class="admin-section-title">🚨 إرسال تنبيه عاجل</div>
-          <div class="form-group"><label class="form-label">نص التنبيه العاجل</label><input type="text" id="ann-text" class="form-input" placeholder="أدخل نص التنبيه العاجل..."></div>
+          <div class="form-group">
+            <label class="form-label">نص التنبيه العاجل</label>
+            <input type="text" id="ann-text" class="form-input" placeholder="أدخل نص التنبيه العاجل...">
+          </div>
           <div style="display:flex;gap:12px;">
             <button class="btn btn-success" onclick="activateAnn()" style="flex:1;">تفعيل التنبيه</button>
             <button class="btn btn-danger"  onclick="deactivateAnn()" style="flex:1;">إلغاء التنبيه</button>
           </div>
         </div>
 
+        <!-- Manage Members -->
         <div class="admin-section">
           <div class="admin-section-title">👥 إدارة الأعضاء</div>
           <div style="margin-bottom:22px;">
             <div class="form-grid-2">
-              <div class="form-group"><label class="form-label">الاسم</label><input type="text" id="nm-name" class="form-input" placeholder="Ghost_Ballas"></div>
-              <div class="form-group"><label class="form-label">الرتبة</label><input type="text" id="nm-rank" class="form-input" placeholder="قائد، نائب القائد..."></div>
-              <div class="form-group"><label class="form-label">تاريخ الانضمام</label><input type="text" id="nm-join" class="form-input" placeholder="2024/03"></div>
-              <div class="form-group"><label class="form-label">التخصص</label><input type="text" id="nm-spec" class="form-input" placeholder="قناص، طيار..."></div>
+              <div class="form-group"><label class="form-label">الاسم</label><input type="text" id="nm-name"  class="form-input" placeholder="Ghost_Ballas"></div>
+              <div class="form-group"><label class="form-label">الرتبة</label><input type="text" id="nm-rank"  class="form-input" placeholder="قائد، نائب القائد..."></div>
+              <div class="form-group"><label class="form-label">تاريخ الانضمام</label><input type="text" id="nm-join"  class="form-input" placeholder="2024/03"></div>
+              <div class="form-group"><label class="form-label">التخصص</label><input type="text" id="nm-spec"  class="form-input" placeholder="قناص، طيار..."></div>
             </div>
             <button class="btn btn-primary" onclick="addMember()">إضافة عضو جديد</button>
           </div>
           <div id="admin-members-tbl"></div>
         </div>
 
+        <!-- Reports form -->
         <div class="admin-section">
           <div class="admin-section-title">📋 كتابة تقرير جديد</div>
           <div class="form-group"><label class="form-label">عنوان التقرير</label><input type="text" id="nr-title" class="form-input" placeholder="عنوان التقرير..."></div>
@@ -665,6 +952,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
           <div id="admin-reports-tbl"></div>
         </div>
 
+        <!-- Achievements management -->
         <div class="admin-section">
           <div class="admin-section-title">🏆 إدارة الإنجازات والمعرض</div>
           <div class="form-grid-2">
@@ -675,6 +963,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
           <div id="admin-ach-tbl"></div>
         </div>
 
+        <!-- Create Member Accounts -->
         <div class="admin-section">
           <div class="admin-section-title">🔑 إنشاء حسابات الأعضاء</div>
           <div style="margin-bottom:22px;">
@@ -685,14 +974,16 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
               <div class="form-group"><label class="form-label">التخصص</label><input type="text" id="mac-spec" class="form-input" placeholder="قناص، طيار..."></div>
             </div>
             <button class="btn btn-primary" onclick="createMemberAccount()">إنشاء حساب للعضو</button>
-            <p class="security-note">⚠️ تنبيه: البيانات محفوظة محلياً فقط — لا تستخدم كلمات مرور حقيقية/مهمة</p>
           </div>
           <div id="admin-accounts-tbl"></div>
         </div>
+
       </div>
     </section>
+
   </main>
 
+  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
   <footer>
     <div class="footer-inner">
       <div class="footer-logo">BALLAS</div>
@@ -703,14 +994,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
 
   <script>
   /* ============================================================
-     BALLAS — SPA مُصحح
+     BALLAS — Complete SPA
+     Admin login: username=Samoley / password=8334251
+     All data persisted in localStorage
      ============================================================ */
 
-  // ── ثوابت ─────────────────────────────────────────────────────────────────
-  // FIX: كلمة المرور لا تُخزن في الكود مباشرة — نستخدم hash بسيط
-  const ADMIN_USER = 'Samoley';
-  const ADMIN_HASH = btoa('8334251'); // تشفير بسيط Base64 (أفضل من نص واضح)
-
+  // ── Constants ──────────────────────────────────────────────────────────────
+  const USERS = [
+    { username: 'Samoley', password: '8334251', role: 'admin' }
+  ];
   const K = {
     SESSION:      'ballas_session',
     MEMBERS:      'ballas_members',
@@ -720,7 +1012,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     ACCOUNTS:     'ballas_accounts'
   };
 
-  // ── بيانات افتراضية ────────────────────────────────────────────────────────
+  // ── Default seed data ──────────────────────────────────────────────────────
   const DEF_MEMBERS = [
     { id:1, name:'Ghost_Ballas', rank:'قائد',        joinDate:'2024/03', specialty:'قائد عمليات' },
     { id:2, name:'K1ng_Purple',  rank:'نائب القائد', joinDate:'2024/05', specialty:'طيار' },
@@ -745,14 +1037,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     { id:6, title:'دفع الغزو عن الأراضي',        imageUrl:'', date:'2026-03-05' }
   ];
 
-  // ── localStorage ───────────────────────────────────────────────────────────
+  // ── localStorage helpers ───────────────────────────────────────────────────
   function lsGet(k) {
     try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; }
   }
-  function lsSet(k, val) {
-    try { localStorage.setItem(k, JSON.stringify(val)); } catch {}
+  function lsSet(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
   }
 
+  // ── Seed defaults ──────────────────────────────────────────────────────────
   function initData() {
     if (!lsGet(K.MEMBERS))      lsSet(K.MEMBERS,      DEF_MEMBERS);
     if (!lsGet(K.REPORTS))      lsSet(K.REPORTS,      DEF_REPORTS);
@@ -760,14 +1053,14 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     if (!lsGet(K.ANNOUNCE))     lsSet(K.ANNOUNCE,     { active:false, message:'' });
   }
 
-  // ── تشغيل التطبيق ──────────────────────────────────────────────────────────
+  // ── App init ──────────────────────────────────────────────────────────────
   function initApp() {
     initData();
     restoreSession();
     renderAll();
     refreshBanner();
     buildTicker();
-    const hash  = location.hash.replace('#','');
+    const hash = location.hash.replace('#','');
     const valid = ['home','members','achievements','stats','reports','join','admin'];
     showSection(valid.includes(hash) ? hash : 'home');
   }
@@ -780,33 +1073,23 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   function getSession() { return lsGet(K.SESSION); }
   function isAdmin()    { const s = getSession(); return s && s.role === 'admin'; }
 
-  // FIX: إزالة onsubmit من الـ form واستبدالها بـ onclick مباشر
-  function handleLogin() {
+  function handleLogin(e) {
+    e.preventDefault();
     const username = document.getElementById('login-user').value.trim();
     const password = document.getElementById('login-pass').value;
     const errEl    = document.getElementById('login-err');
-    if (!username || !password) { errEl.style.display = 'block'; return; }
-
-    // FIX: التحقق بـ hash بدل نص واضح
-    const isAdminLogin = (username === ADMIN_USER && btoa(password) === ADMIN_HASH);
     const storedAccounts = lsGet(K.ACCOUNTS) || [];
-    const memberUser = storedAccounts.find(u => u.username === username && btoa(u.password) === btoa(password));
-
-    if (!isAdminLogin && !memberUser) {
-      errEl.style.display = 'block';
-      return;
-    }
-
+    const user = USERS.find(u => u.username === username && u.password === password)
+              || storedAccounts.find(u => u.username === username && u.password === password);
+    if (!user) { errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
-    const role    = isAdminLogin ? 'admin' : 'member';
-    const session = { username, role };
+    const session = { username: user.username, role: user.role };
     lsSet(K.SESSION, session);
     applySession(session);
     closeLoginModal();
-    document.getElementById('login-user').value = '';
-    document.getElementById('login-pass').value = '';
-    toast('مرحباً ' + username + ' — تم تسجيل الدخول بنجاح ✓');
-    if (role === 'admin') renderAdminPanel();
+    document.getElementById('login-form').reset();
+    toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
+    if (user.role === 'admin') { renderAdminPanel(); }
   }
 
   function logout() {
@@ -822,6 +1105,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const userBadge   = document.getElementById('username-badge');
     const adminLink   = document.getElementById('admin-nav-link');
     const adminMobile = document.getElementById('admin-mobile-link');
+
     if (session && session.username) {
       loginBtn.style.display    = 'none';
       userDisplay.style.display = 'flex';
@@ -839,43 +1123,36 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     }
   }
 
-  // FIX: إضافة Enter key support للـ login
-  document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('login-modal');
-    if (!modal.classList.contains('hidden') && e.key === 'Enter') handleLogin();
-  });
-
   // ── Navigation ─────────────────────────────────────────────────────────────
-  function navClick(name) { showSection(name); return false; }
+  function navClick(name) {
+    showSection(name);
+    return false;
+  }
 
-  // FIX الرئيسي: إصلاح showSection — إزالة style.display المتعارض مع CSS
   function showSection(name) {
     if (name === 'admin' && !isAdmin()) { openLoginModal(); return; }
 
-    // FIX: استخدام className فقط بدون العبث بـ style.display
     document.querySelectorAll('.page-section').forEach(s => {
       s.classList.remove('active');
+      s.style.display = '';
     });
-
     const target = document.getElementById('section-' + name);
     if (target) {
       target.classList.add('active');
-      // FIX: إعادة تشغيل الـ animation بشكل صحيح
-      target.classList.remove('fade-in');
-      void target.offsetWidth; // force reflow
       target.classList.add('fade-in');
+      setTimeout(() => target.classList.remove('fade-in'), 400);
     }
 
+    // Update nav active state
     document.querySelectorAll('nav a[data-section], #mobile-menu a[data-section]').forEach(a => {
       a.classList.toggle('active', a.dataset.section === name);
     });
 
-    // FIX: تحديث الـ hash بدون إعادة تحميل أو scroll زائد
-    history.replaceState(null, '', '#' + name);
+    location.hash = name;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render all ─────────────────────────────────────────────────────────────
   function renderAll() {
     renderHomeStats();
     renderMembers();
@@ -885,15 +1162,16 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     renderAdminPanel();
   }
 
+  // ── Home Stats ─────────────────────────────────────────────────────────────
   function renderHomeStats() {
     const members = lsGet(K.MEMBERS) || [];
     const el = document.getElementById('home-stats');
     if (!el) return;
     el.innerHTML = [
       { num: members.length, lbl: 'الأعضاء النشطون', cls: '' },
-      { num: 3,   lbl: 'متصل الآن',        cls: 'green' },
-      { num: 196, lbl: 'حروب مكسوبة',      cls: '' },
-      { num: 654, lbl: 'إجمالي الإلغاءات', cls: '' }
+      { num: 3,   lbl: 'متصل الآن',         cls: 'green' },
+      { num: 196, lbl: 'حروب مكسوبة',       cls: '' },
+      { num: 654, lbl: 'إجمالي الإلغاءات',  cls: '' }
     ].map(s => `
       <div class="stat-card">
         <span class="stat-num ${s.cls}">${s.num}</span>
@@ -901,6 +1179,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>`).join('');
   }
 
+  // ── Members ────────────────────────────────────────────────────────────────
   function renderMembers() {
     const members = lsGet(K.MEMBERS) || [];
     const el = document.getElementById('members-grid');
@@ -927,6 +1206,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>`).join('');
   }
 
+  // ── Achievements ───────────────────────────────────────────────────────────
   function renderAchievements() {
     const items = lsGet(K.ACHIEVEMENTS) || [];
     const el = document.getElementById('achievements-grid');
@@ -950,6 +1230,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>`).join('');
   }
 
+  // ── Reports ────────────────────────────────────────────────────────────────
   function renderReports() {
     const items = (lsGet(K.REPORTS) || []).slice().reverse();
     const el = document.getElementById('reports-list');
@@ -971,6 +1252,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
       </div>`).join('');
   }
 
+  // ── Stats ──────────────────────────────────────────────────────────────────
   function renderStats() {
     const members      = lsGet(K.MEMBERS)      || [];
     const achievements = lsGet(K.ACHIEVEMENTS) || [];
@@ -978,14 +1260,14 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const el = document.getElementById('stats-grid');
     if (!el) return;
     const data = [
-      { num: members.length,      lbl: 'إجمالي الأعضاء',      cls: '' },
-      { num: 196,                 lbl: 'حروب مكسوبة',          cls: '' },
-      { num: 654,                 lbl: 'إلغاءات منفذة',        cls: '' },
-      { num: achievements.length, lbl: 'إنجازات مسجلة',        cls: '' },
-      { num: 3,                   lbl: 'أعضاء متصلون الآن',   cls: 'green' },
-      { num: reports.length,      lbl: 'تقارير منشورة',        cls: '' },
-      { num: 12,                  lbl: 'مناطق تحت السيطرة',    cls: '' },
-      { num: 98,                  lbl: 'نسبة الفوز %',         cls: '' }
+      { num: members.length,      lbl: 'إجمالي الأعضاء',        cls: '' },
+      { num: 196,                 lbl: 'حروب مكسوبة',            cls: '' },
+      { num: 654,                 lbl: 'إلغاءات منفذة',          cls: '' },
+      { num: achievements.length, lbl: 'إنجازات مسجلة',          cls: '' },
+      { num: 3,                   lbl: 'أعضاء متصلون الآن',     cls: 'green' },
+      { num: reports.length,      lbl: 'تقارير منشورة',          cls: '' },
+      { num: 12,                  lbl: 'مناطق تحت السيطرة',      cls: '' },
+      { num: 98,                  lbl: 'نسبة الفوز %',           cls: '' }
     ];
     el.innerHTML = data.map(s => `
       <div class="stats-sec-item">
@@ -1015,11 +1297,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     if (!members.length) { el.innerHTML = emptyAdmin('لا يوجد أعضاء'); return; }
     el.innerHTML = `
       <table class="admin-table">
-        <thead><tr><th>الاسم</th><th>الرتبة</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th></tr></thead>
+        <thead><tr>
+          <th>الاسم</th><th>الرتبة</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
+        </tr></thead>
         <tbody>${members.map(m => `
           <tr>
-            <td>${esc(m.name)}</td><td>${esc(m.rank)}</td>
-            <td>${esc(m.joinDate)}</td><td>${esc(m.specialty)}</td>
+            <td>${esc(m.name)}</td>
+            <td>${esc(m.rank)}</td>
+            <td>${esc(m.joinDate)}</td>
+            <td>${esc(m.specialty)}</td>
             <td><div class="admin-actions">
               <button class="btn btn-outline btn-sm" onclick="openEditModal(${m.id})">تعديل</button>
               <button class="btn btn-danger btn-sm"  onclick="deleteMember(${m.id})">حذف</button>
@@ -1039,7 +1325,9 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
         <thead><tr><th>العنوان</th><th>التصنيف</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(r => `
           <tr>
-            <td>${esc(r.title)}</td><td>${esc(r.category)}</td><td>${fmtDate(r.date)}</td>
+            <td>${esc(r.title)}</td>
+            <td>${esc(r.category)}</td>
+            <td>${fmtDate(r.date)}</td>
             <td><div class="admin-actions">
               <button class="btn btn-danger btn-sm" onclick="deleteReport(${r.id})">حذف</button>
             </div></td>
@@ -1058,7 +1346,9 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
         <thead><tr><th>العنوان</th><th>التاريخ</th><th>صورة</th><th>الإجراءات</th></tr></thead>
         <tbody>${items.map(a => `
           <tr>
-            <td>${esc(a.title)}</td><td>${fmtDate(a.date)}</td><td>${a.imageUrl ? '✅' : '—'}</td>
+            <td>${esc(a.title)}</td>
+            <td>${fmtDate(a.date)}</td>
+            <td>${a.imageUrl ? '✅' : '—'}</td>
             <td><div class="admin-actions">
               <button class="btn btn-danger btn-sm" onclick="deleteAchievement(${a.id})">حذف</button>
             </div></td>
@@ -1071,12 +1361,12 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     return `<div class="empty-state" style="padding:18px;font-size:13px;">${msg}</div>`;
   }
 
-  // FIX: buildTicker لا يُضيف فوق المحتوى القديم بل يمسحه أولاً
+  // ── Ticker ─────────────────────────────────────────────────────────────────
   function buildTicker() {
     const reports = lsGet(K.REPORTS) || [];
     const items = reports.length
       ? reports.map(r => r.title.toUpperCase())
-      : ['WAR LOG — GROVE ST. SKIRMISH OUTCOME','NEW RECRUITS — MANDATORY INITIATION THIS WEEKEND','TERRITORY EXPANSION — EAST LS IS OURS'];
+      : ['WAR LOG — GROVE ST. SKIRMISH OUTCOME', 'NEW RECRUITS — MANDATORY INITIATION THIS WEEKEND', 'TERRITORY EXPANSION — EAST LS IS OURS'];
     const doubled = [...items, ...items];
     const html = doubled.map(t => `
       <span class="ticker-item">
@@ -1084,20 +1374,19 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
         <span class="ticker-date">5/29/2026</span>${esc(t)}
       </span>`).join('');
     const el = document.getElementById('ticker-track');
-    // FIX: مسح المحتوى القديم قبل الإضافة
     if (el) el.innerHTML = html;
   }
 
   // ── Admin CRUD ─────────────────────────────────────────────────────────────
   function addMember() {
-    const name = v('nm-name'), rank = v('nm-rank'),
+    const name     = v('nm-name'), rank = v('nm-rank'),
           joinDate = v('nm-join'), spec = v('nm-spec');
     if (!name || !rank || !joinDate || !spec) { toast('يرجى ملء جميع الحقول'); return; }
     const members = lsGet(K.MEMBERS) || [];
     const id = members.length ? Math.max(...members.map(m => m.id)) + 1 : 1;
     members.push({ id, name, rank, joinDate, specialty: spec });
     lsSet(K.MEMBERS, members);
-    ['nm-name','nm-rank','nm-join','nm-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
+    ['nm-name','nm-rank','nm-join','nm-spec'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
     renderMembers(); renderAdminMembers(); renderHomeStats(); renderStats();
     toast('تم إضافة العضو: ' + name);
   }
@@ -1105,7 +1394,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   function openEditModal(id) {
     const m = (lsGet(K.MEMBERS) || []).find(x => x.id === id);
     if (!m) return;
-    setVal('edit-id', id);
+    setVal('edit-id',   id);
     setVal('edit-name', m.name);
     setVal('edit-rank', m.rank);
     setVal('edit-join', m.joinDate);
@@ -1113,14 +1402,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     document.getElementById('edit-member-modal').classList.remove('hidden');
   }
 
-  function closeEditModal() { document.getElementById('edit-member-modal').classList.add('hidden'); }
+  function closeEditModal() {
+    document.getElementById('edit-member-modal').classList.add('hidden');
+  }
 
-  // FIX: إزالة e.preventDefault() لأنه لم يعد هناك form
-  function saveEditMember() {
+  function saveEditMember(e) {
+    e.preventDefault();
     const id   = parseInt(v('edit-id'));
     const name = v('edit-name'), rank = v('edit-rank'),
           join = v('edit-join'), spec = v('edit-spec');
-    if (!name || !rank || !join || !spec) { toast('يرجى ملء جميع الحقول'); return; }
     const members = lsGet(K.MEMBERS) || [];
     const idx = members.findIndex(m => m.id === id);
     if (idx === -1) return;
@@ -1131,9 +1421,8 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     toast('تم تحديث بيانات ' + name);
   }
 
-  // FIX: استبدال confirm() بـ toast + تأكيد بسيط لتفادي مشاكل المتصفحات
   function deleteMember(id) {
-    if (!window.confirm('هل تريد حذف هذا العضو نهائياً؟')) return;
+    if (!confirm('هل تريد حذف هذا العضو نهائياً؟')) return;
     lsSet(K.MEMBERS, (lsGet(K.MEMBERS)||[]).filter(m => m.id !== id));
     renderMembers(); renderAdminMembers(); renderHomeStats(); renderStats();
     toast('تم حذف العضو');
@@ -1148,18 +1437,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
     reports.push({ id, title, category: cat, content: body, date });
     lsSet(K.REPORTS, reports);
-    setVal('nr-title',''); setVal('nr-body','');
-    // FIX: إعادة ضبط الـ select للقيمة الأولى
-    const catEl = document.getElementById('nr-cat');
-    if (catEl) catEl.selectedIndex = 0;
+    setVal('nr-title', ''); setVal('nr-body', '');
     renderReports(); renderAdminReports(); renderStats(); buildTicker();
     toast('تم نشر التقرير');
   }
 
   function deleteReport(id) {
-    if (!window.confirm('هل تريد حذف هذا التقرير؟')) return;
+    if (!confirm('هل تريد حذف هذا التقرير؟')) return;
     lsSet(K.REPORTS, (lsGet(K.REPORTS)||[]).filter(r => r.id !== id));
-    renderReports(); renderAdminReports(); renderStats(); buildTicker();
+    renderReports(); renderAdminReports(); renderStats();
     toast('تم حذف التقرير');
   }
 
@@ -1167,8 +1453,6 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const title    = v('na-title');
     const imageUrl = v('na-url');
     if (!title) { toast('يرجى إدخال عنوان الإنجاز'); return; }
-    // FIX: التحقق من صحة رابط الصورة إذا أُدخل
-    if (imageUrl && !isValidUrl(imageUrl)) { toast('رابط الصورة غير صحيح'); return; }
     const items = lsGet(K.ACHIEVEMENTS) || [];
     const id = items.length ? Math.max(...items.map(a => a.id)) + 1 : 1;
     const now = new Date();
@@ -1181,7 +1465,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   }
 
   function deleteAchievement(id) {
-    if (!window.confirm('هل تريد حذف هذا الإنجاز؟')) return;
+    if (!confirm('هل تريد حذف هذا الإنجاز؟')) return;
     lsSet(K.ACHIEVEMENTS, (lsGet(K.ACHIEVEMENTS)||[]).filter(a => a.id !== id));
     renderAchievements(); renderAdminAchievements(); renderStats();
     toast('تم حذف الإنجاز');
@@ -1194,7 +1478,7 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const joinDate  = v('mac-join');
     const specialty = v('mac-spec');
     if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
-    if (username === ADMIN_USER) { toast('لا يمكن استخدام هذا الاسم'); return; }
+    if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
     const accounts = lsGet(K.ACCOUNTS) || [];
     if (accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
     const id = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
@@ -1213,10 +1497,14 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     if (!accounts.length) { el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد'); return; }
     el.innerHTML = `
       <table class="admin-table">
-        <thead><tr><th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th></tr></thead>
+        <thead><tr>
+          <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
+        </tr></thead>
         <tbody>${accounts.map(a => `
           <tr>
-            <td>${esc(a.username)}</td><td>${esc(a.joinDate)}</td><td>${esc(a.specialty)}</td>
+            <td>${esc(a.username)}</td>
+            <td>${esc(a.joinDate)}</td>
+            <td>${esc(a.specialty)}</td>
             <td><div class="admin-actions">
               <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
             </div></td>
@@ -1226,13 +1514,13 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   }
 
   function deleteAccount(id) {
-    if (!window.confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
+    if (!confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
     lsSet(K.ACCOUNTS, (lsGet(K.ACCOUNTS)||[]).filter(a => a.id !== id));
     renderAdminAccounts();
     toast('تم حذف الحساب');
   }
 
-  // ── Banner ─────────────────────────────────────────────────────────────────
+  // ── Announcement Banner ────────────────────────────────────────────────────
   function activateAnn() {
     const text = v('ann-text');
     if (!text) { toast('يرجى إدخال نص التنبيه'); return; }
@@ -1262,13 +1550,9 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
 
   // ── Modals ──────────────────────────────────────────────────────────────────
   function openLoginModal()  { document.getElementById('login-modal').classList.remove('hidden'); }
-  function closeLoginModal() {
-    document.getElementById('login-modal').classList.add('hidden');
-    document.getElementById('login-err').style.display = 'none';
-    document.getElementById('login-user').value = '';
-    document.getElementById('login-pass').value = '';
-  }
+  function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
 
+  // Close modal on overlay click
   document.getElementById('login-modal').addEventListener('click', function(e) {
     if (e.target === this) closeLoginModal();
   });
@@ -1276,19 +1560,15 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     if (e.target === this) closeEditModal();
   });
 
-  // ── Join ───────────────────────────────────────────────────────────────────
-  // FIX: إزالة onsubmit من الـ form
-  function handleJoin() {
-    const name    = v('join-name');
-    const reason  = v('join-reason');
-    if (!name || !reason) { toast('يرجى ملء الحقول المطلوبة'); return; }
+  // ── Join form ──────────────────────────────────────────────────────────────
+  function handleJoin(e) {
+    e.preventDefault();
+    const name = v('join-name');
     toast('تم إرسال طلبك يا ' + name + ' — سيتم مراجعته قريباً ✓');
-    ['join-name','join-discord','join-reason','join-skill'].forEach(fid => {
-      const el = document.getElementById(fid); if(el) el.value='';
-    });
+    e.target.reset();
   }
 
-  // ── Mobile ──────────────────────────────────────────────────────────────────
+  // ── Mobile menu ────────────────────────────────────────────────────────────
   function toggleMobile() { document.getElementById('mobile-menu').classList.toggle('open'); }
   function closeMobile()  { document.getElementById('mobile-menu').classList.remove('open'); }
 
@@ -1319,9 +1599,6 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
     const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     return `${parseInt(d)} ${months[parseInt(m)-1]||''} ${y}`;
   }
-  function isValidUrl(s) {
-    try { new URL(s); return true; } catch { return false; }
-  }
   function v(id)        { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
   function setVal(id,x) { const el = document.getElementById(id); if(el) el.value = x; }
   function pad(n)       { return String(n).padStart(2,'0'); }
@@ -1331,5 +1608,3 @@ cat > /mnt/user-data/outputs/ballas.html << 'HTMLEOF'
   </script>
 </body>
 </html>
-HTMLEOF
-echo "Done: $(wc -c < /mnt/user-data/outputs/ballas.html) bytes"
