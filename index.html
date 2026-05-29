@@ -1066,49 +1066,64 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  async function handleLogin(e) {
-  e.preventDefault();
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const errEl    = document.getElementById('login-err');
+  // تأكد أن هذا السطر في أعلى الملف خارج أي دالة
+const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.json";
 
-  toast('جاري الاتصال بالسيرفر... ⏳');
+async function handleLogin(e) {
+  if (e) e.preventDefault(); // تأكد من منع إعادة تحميل الصفحة
+
+  const usernameEl = document.getElementById('login-user');
+  const passwordEl = document.getElementById('login-pass');
+  const errEl      = document.getElementById('login-err');
+
+  // التحقق من وجود العناصر قبل قراءة قيمتها
+  if (!usernameEl || !passwordEl) {
+    console.error("عناصر النموذج غير موجودة في الصفحة!");
+    return;
+  }
+
+  const username = usernameEl.value.trim();
+  const password = passwordEl.value.trim();
+
+  // تنبيه بسيط
+  if (typeof toast === 'function') toast('جاري الاتصال... ⏳');
 
   try {
-    // 1. جلب الحسابات الحقيقية من Firebase
     const response = await fetch(FIREBASE_URL);
     const data = await response.json();
     
-    // تحويل البيانات من Firebase إلى مصفوفة (Array)
     const accounts = data ? Object.values(data) : [];
     
-    // 2. البحث عن المستخدم (سواء في قائمة USERS الثابتة أو في حسابات السحابة)
-    const user = USERS.find(u => u.username === username && u.password === password)
+    // البحث في الحسابات (تأكد أن USERS معرفة في ملفك أيضاً)
+    const user = (typeof USERS !== 'undefined' ? USERS.find(u => u.username === username && u.password === password) : null)
               || accounts.find(u => u.username === username && u.password === password);
 
     if (!user) {
-      errEl.style.display = 'block';
-      toast('خطأ: اسم المستخدم أو كلمة المرور غير صحيحة');
+      if (errEl) errEl.style.display = 'block';
+      if (typeof toast === 'function') toast('خطأ: اسم المستخدم أو كلمة المرور غير صحيحة');
       return;
     }
 
-    // 3. إذا نجح الدخول:
-    errEl.style.display = 'none';
+    // نجاح الدخول
+    if (errEl) errEl.style.display = 'none';
     const session = { username: user.username, role: user.role };
-    lsSet(K.SESSION, session);
-    applySession(session);
+    
+    // استدعاء الدوال المساعدة
+    if (typeof lsSet === 'function') lsSet('ballas_session', session);
+    if (typeof applySession === 'function') applySession(session);
+    
     closeLoginModal();
     document.getElementById('login-form').reset();
     
-    toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
+    if (typeof toast === 'function') toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
     
-    if (user.role === 'admin') {
+    if (user.role === 'admin' && typeof renderAdminPanel === 'function') {
       renderAdminPanel();
     }
 
   } catch (err) {
-    toast('خطأ في الاتصال بقاعدة البيانات. تأكد من الإنترنت.');
-    console.error(err);
+    console.error("خطأ اتصال:", err);
+    if (typeof toast === 'function') toast('خطأ في الاتصال بقاعدة البيانات.');
   }
 }
 
