@@ -1474,22 +1474,38 @@ const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.js
   }
 
   // ── Member Accounts ────────────────────────────────────────────────────────
-  function createMemberAccount() {
-    const username  = v('mac-user');
-    const password  = v('mac-pass');
-    const joinDate  = v('mac-join');
-    const specialty = v('mac-spec');
-    if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
-    if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
-    const accounts = lsGet(K.ACCOUNTS) || [];
-    if (accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
-    const id = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
-    accounts.push({ id, username, password, joinDate, specialty, role: 'member' });
-    lsSet(K.ACCOUNTS, accounts);
-    ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
-    renderAdminAccounts();
-    toast('تم إنشاء حساب العضو: ' + username + ' ✓');
+  async function createMemberAccount() {
+  const username  = v('mac-user');
+  const password  = v('mac-pass');
+  const joinDate  = v('mac-join');
+  const specialty = v('mac-spec');
+
+  if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
+  if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
+
+  toast('جاري الإضافة للسحاب... ⏳');
+
+  try {
+    const response = await fetch(FIREBASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, joinDate, specialty, role: 'member' })
+    });
+
+    if (response.ok) {
+      // مسح المدخلات بعد النجاح
+      ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
+      
+      // تحديث الجدول فوراً من السحاب
+      renderAdminAccounts();
+      toast('تم إنشاء حساب العضو بنجاح في السحاب! ✓');
+    } else {
+      toast('فشل الحفظ في السحاب');
+    }
+  } catch (err) {
+    toast('خطأ في الاتصال، تأكد من الإنترنت');
   }
+}
 
   async function renderAdminAccounts() {
   if (!isAdmin()) return;
