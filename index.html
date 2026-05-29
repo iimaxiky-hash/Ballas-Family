@@ -1472,52 +1472,119 @@
   }
 
   // ── Member Accounts ────────────────────────────────────────────────────────
-  function createMemberAccount() {
+  // ── Member Accounts (النسخة المتزامنة سحابياً مع Firebase) ─────────────────
+  async function createMemberAccount() {
     const username  = v('mac-user');
     const password  = v('mac-pass');
     const joinDate  = v('mac-join');
     const specialty = v('mac-spec');
+    
     if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
     if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
-    const accounts = lsGet(K.ACCOUNTS) || [];
-    if (accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
-    const id = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
-    accounts.push({ id, username, password, joinDate, specialty, role: 'member' });
-    lsSet(K.ACCOUNTS, accounts);
-    ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
-    renderAdminAccounts();
-    toast('تم إنشاء حساب العضو: ' + username + ' ✓');
+
+    toast('جاري التحقق وإنشاء الحساب... ⏳');
+
+    try {
+      // 1. جلب الحسابات الحالية مباشرة من الفايربيز للتحقق من عدم تكرار الاسم
+      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
+      const data = await res.json() || {};
+      
+      // تحويل كائن الفايربيز إلى مصفوفة للتعامل معها
+      const accounts = Object.keys(data).map(key => ({ fbKey: key, ...data[key] }));
+
+      // التحقق من أن الاسم غير محجوز من قِبل أي جهاز آخر
+      if (accounts.find(a => a.username === username)) { 
+        toast('اسم المستخدم موجود بالفعل أونلاين'); 
+        return; 
+      }
+
+      // حساب الـ ID الجديد تتابعياً
+      const id = accounts.length ? Math.max(...accounts.map(a => a.id || 0)) + 1 : 1;
+      const newAccount = { id, username, password, joinDate, specialty, role: 'member' };
+
+      // 2. رفع الحساب الجديد فوراً إلى الفايربيز
+      const saveRes = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAccount)
+      });
+
+      if (!saveRes.ok) throw new Error("فشل الرفع إلى السيرفر");
+
+      // تنظيف الخانات بعد النجاح
+      ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { 
+        const el = document.getElementById(fid); if(el) el.value=''; 
+      });
+
+      // إعادة تحديث الجدول أونلاين فوراً
+      await renderAdminAccounts();
+      toast('تم إنشاء حساب العضو ورفعه للسيرفر بنجاح ✓');
+
+    } catch (error) {
+      console.error(error);
+      toast('حدث خطأ في الاتصال بقاعدة البيانات السحابية');
+    }
   }
 
-  function renderAdminAccounts() {
+  async function renderAdminAccounts() {
     if (!isAdmin()) return;
-    const accounts = lsGet(K.ACCOUNTS) || [];
     const el = document.getElementById('admin-accounts-tbl');
     if (!el) return;
-    if (!accounts.length) { el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد'); return; }
-    el.innerHTML = `
-      <table class="admin-table">
-        <thead><tr>
-          <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
-        </tr></thead>
-        <tbody>${accounts.map(a => `
-          <tr>
-            <td>${esc(a.username)}</td>
-            <td>${esc(a.joinDate)}</td>
-            <td>${esc(a.specialty)}</td>
-            <td><div class="admin-actions">
-              <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
-            </div></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
+
+    try {
+      // جلب البيانات الحية مباشرة من الفايربيز
+      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
+      const data = await res.json();
+      
+      if (!data) { 
+        el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد على السيرفر'); 
+        return; 
+      }
+
+      // تحويل الكائن إلى مصفوفة مع حقن الـ fbKey (المفتاح الفريد الخاص بـ Firebase للتحكم بالحذف)
+      const accounts = Object.keys(data).map(key => ({ fbKey: key, ...data[key] }));
+
+      el.innerHTML = `
+        <table class="admin-table">
+          <thead><tr>
+            <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
+          </tr></thead>
+          <tbody>${accounts.map(a => `
+            <tr>
+              <td>${esc(a.username)}</td>
+              <td>${esc(a.joinDate)}</td>
+              <td>${esc(a.specialty)}</td>
+              <td><div class="admin-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.fbKey}')">حذف</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch (error) {
+      console.error(error);
+      el.innerHTML = emptyAdmin('خطأ في جلب البيانات الحية من السيرفر');
+    }
   }
 
-  function deleteAccount(id) {
-    if (!confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
-    lsSet(K.ACCOUNTS, (lsGet(K.ACCOUNTS)||[]).filter(a => a.id !== id));
-    renderAdminAccounts();
-    toast('تم حذف الحساب');
+  async function deleteAccount(fbKey) {
+    if (!confirm('هل تريد حذف هذا الحساب نهائياً من السيرفر السحابي؟')) return;
+    
+    toast('جاري الحذف من السيرفر... ⏳');
+    
+    try {
+      // إرسال طلب DELETE للمسار المباشر للحساب عن طريق مفتاحه الفريد
+      const res = await fetch(`https://ballas-web-default-rtdb.firebaseio.com/accounts/${fbKey}.json`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) throw new Error("فشل الحذف السحابي");
+
+      await renderAdminAccounts();
+      toast('تم حذف الحساب نهائياً من السيرفر المشترك ✓');
+    } catch (error) {
+      console.error(error);
+      toast('فشل حذف الحساب، تأكد من اتصال الإنترنت');
+    }
   }
 
   // ── Announcement Banner ────────────────────────────────────────────────────
