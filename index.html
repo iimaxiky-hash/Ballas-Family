@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <!-- Firebase SDK — must load before body scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
     :root {
       --primary:       #7c3aed;
@@ -645,12 +648,6 @@
     </div>
   </footer>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       Firebase SDK (modular compat build — works in plain HTML)
-  ══════════════════════════════════════════════════════════════ -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
   <script>
   /* ============================================================
      BALLAS — SPA with Firebase Realtime Database
@@ -727,10 +724,18 @@
     arr.forEach(item => { obj[item.id] = item; });
     return obj;
   }
-  // Convert Firebase snapshot value → array sorted by id
+  // Convert Firebase snapshot value → array
+  // Works with both numeric keys and Firebase push() keys
   function objToArray(val) {
     if (!val) return [];
-    return Object.values(val).sort((a, b) => a.id - b.id);
+    return Object.entries(val).map(([fbKey, item]) => {
+      // Attach fbKey so we can delete by it later
+      return typeof item === 'object' ? { _fbKey: fbKey, ...item } : item;
+    }).sort((a, b) => {
+      // Sort by numeric id if available, otherwise by fbKey
+      if (a.id && b.id) return Number(a.id) - Number(b.id);
+      return String(a._fbKey).localeCompare(String(b._fbKey));
+    });
   }
   // Write whole collection
   function fbSet(path, data) { return db.ref(path).set(data); }
@@ -1053,7 +1058,7 @@
           <tr>
             <td>${esc(a.username)}</td><td>${esc(a.joinDate)}</td><td>${esc(a.specialty)}</td>
             <td><div class="admin-actions">
-              <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteAccount('${a._fbKey || a.id}')">حذف</button>
             </div></td>
           </tr>`).join('')}
         </tbody>
@@ -1157,16 +1162,16 @@
     if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
     if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
     if (_accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
-    const id = nextId(_accounts);
-    db.ref(`${P.ACCOUNTS}/${id}`).set({ id, username, password, joinDate, specialty, role: 'member' }).then(() => {
+    // Use push() so Firebase generates a unique key (avoids numeric key conflicts)
+    db.ref(P.ACCOUNTS).push({ username, password, joinDate, specialty, role: 'member' }).then(() => {
       ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
       toast('تم إنشاء حساب العضو: ' + username + ' ✓');
     });
   }
 
-  function deleteAccount(id) {
+  function deleteAccount(fbKey) {
     if (!confirm('هل تريد حذف هذا الحساب نهائياً؟')) return;
-    db.ref(`${P.ACCOUNTS}/${id}`).remove().then(() => toast('تم حذف الحساب'));
+    db.ref(`${P.ACCOUNTS}/${fbKey}`).remove().then(() => toast('تم حذف الحساب'));
   }
 
   // ── Announcement ───────────────────────────────────────────────────────────
