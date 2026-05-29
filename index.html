@@ -630,8 +630,15 @@
               <div class="form-group"><label class="form-label">كلمة المرور</label><input type="password" id="mac-pass" class="form-input" placeholder="كلمة المرور" autocomplete="new-password"></div>
               <div class="form-group"><label class="form-label">تاريخ الانضمام</label><input type="text" id="mac-join" class="form-input" placeholder="2024/03"></div>
               <div class="form-group"><label class="form-label">التخصص</label><input type="text" id="mac-spec" class="form-input" placeholder="قناص، طيار..."></div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">الدور</label>
+                <select id="mac-role" class="form-select">
+                  <option value="member">👤 عضو عادي</option>
+                  <option value="admin">👑 أدمن</option>
+                </select>
+              </div>
             </div>
-            <button class="btn btn-primary" onclick="createMemberAccount()">إنشاء حساب للعضو</button>
+            <button class="btn btn-primary" onclick="createMemberAccount()">إنشاء الحساب</button>
           </div>
           <div id="admin-accounts-tbl"></div>
         </div>
@@ -1053,10 +1060,17 @@
     if (!_accounts.length) { el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد'); return; }
     el.innerHTML = `
       <table class="admin-table">
-        <thead><tr><th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th></tr></thead>
+        <thead><tr><th>اسم المستخدم</th><th>الدور</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th></tr></thead>
         <tbody>${_accounts.map(a => `
           <tr>
-            <td>${esc(a.username)}</td><td>${esc(a.joinDate)}</td><td>${esc(a.specialty)}</td>
+            <td>${esc(a.username)}</td>
+            <td><span style="font-size:11px;padding:2px 9px;border-radius:2px;font-weight:700;letter-spacing:.08em;
+              ${a.role==='admin'
+                ? 'background:rgba(124,58,237,.18);color:#c4b5fd;border:1px solid rgba(124,58,237,.4);'
+                : 'background:rgba(34,197,94,.1);color:#86efac;border:1px solid rgba(34,197,94,.3);'}">
+              ${a.role === 'admin' ? '👑 أدمن' : '👤 عضو'}
+            </span></td>
+            <td>${esc(a.joinDate)}</td><td>${esc(a.specialty)}</td>
             <td><div class="admin-actions">
               <button class="btn btn-danger btn-sm" onclick="deleteAccount('${a._fbKey || a.id}')">حذف</button>
             </div></td>
@@ -1159,13 +1173,15 @@
   function createMemberAccount() {
     const username = v('mac-user'), password = v('mac-pass'),
           joinDate = v('mac-join'), specialty = v('mac-spec');
+    const roleEl = document.getElementById('mac-role');
+    const role   = roleEl ? roleEl.value : 'member';
     if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
     if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
     if (_accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
-    // Use push() so Firebase generates a unique key (avoids numeric key conflicts)
-    db.ref(P.ACCOUNTS).push({ username, password, joinDate, specialty, role: 'member' }).then(() => {
+    db.ref(P.ACCOUNTS).push({ username, password, joinDate, specialty, role }).then(() => {
       ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
-      toast('تم إنشاء حساب العضو: ' + username + ' ✓');
+      if (roleEl) roleEl.value = 'member';
+      toast('تم إنشاء حساب ' + (role === 'admin' ? 'الأدمن' : 'العضو') + ': ' + username + ' ✓');
     });
   }
 
