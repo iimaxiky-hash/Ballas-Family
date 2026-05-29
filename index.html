@@ -1054,10 +1054,11 @@
   }
 
   // ── App init ──────────────────────────────────────────────────────────────
+// ── App init ──────────────────────────────────────────────────────────────
   function initApp() {
   initData();
   
-  // تحسين: التأكد من وجود الدالة قبل استدعائها لمنع انهيار البرنامج
+  // التحقق من وجود الدالة قبل استدعائها لمنع انهيار البرنامج
   if (typeof restoreSession === 'function') {
     restoreSession();
   } else {
@@ -1073,12 +1074,38 @@
   showSection(valid.includes(hash) ? hash : 'home');
 }
 
-  // ── Auth ───────────────────────────────────────────────────────────────────
-  // تأكد أن هذا السطر في أعلى الملف خارج أي دالة
+  // ── Auth & Session Helpers ─────────────────────────────────────────────────
 const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.json";
 
+// دالة التحقق من رتبة المدير (تم إعادتها لمنع خطأ isAdmin is not defined)
+function isAdmin() {
+  if (typeof lsGet !== 'function') return false;
+  const s = lsGet(K.SESSION);
+  return s && s.role === 'admin';
+}
+
+// دالة التحكم في إظهار وإخفاء أزرار الدخول بحسب الجلسة
+function applySession(session) {
+  const loginBtn = document.getElementById('login-btn');
+  const userDisplay = document.getElementById('user-display');
+  if (session && session.username) {
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (userDisplay) userDisplay.style.display = 'flex';
+  } else {
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (userDisplay) userDisplay.style.display = 'none';
+  }
+}
+
+// دالة استعادة الجلسة عند فتح الموقع
+function restoreSession() {
+  if (typeof lsGet !== 'function') return;
+  const s = lsGet(K.SESSION);
+  if (s && s.username) applySession(s);
+}
+
 async function handleLogin(e) {
-  if (e) e.preventDefault(); // تأكد من منع إعادة تحميل الصفحة
+  if (e) e.preventDefault(); // منع إعادة تحميل الصفحة
 
   const usernameEl = document.getElementById('login-user');
   const passwordEl = document.getElementById('login-pass');
@@ -1102,7 +1129,7 @@ async function handleLogin(e) {
     
     const accounts = data ? Object.values(data) : [];
     
-    // البحث في الحسابات (تأكد أن USERS معرفة في ملفك أيضاً)
+    // البحث في الحسابات المرفوعة على Firebase أو المصفوفة المحلية إن وجدت
     const user = (typeof USERS !== 'undefined' ? USERS.find(u => u.username === username && u.password === password) : null)
               || accounts.find(u => u.username === username && u.password === password);
 
@@ -1116,18 +1143,22 @@ async function handleLogin(e) {
     if (errEl) errEl.style.display = 'none';
     const session = { username: user.username, role: user.role };
     
-    // استدعاء الدوال المساعدة
-    if (typeof lsSet === 'function') lsSet('ballas_session', session);
-    if (typeof applySession === 'function') applySession(session);
+    // استدعاء الدوال المساعدة وحفظ البيانات
+    if (typeof lsSet === 'function') lsSet(K.SESSION, session);
+    applySession(session);
     
-    closeLoginModal();
-    document.getElementById('login-form').reset();
+    if (typeof closeLoginModal === 'function') closeLoginModal();
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) loginForm.reset();
     
     if (typeof toast === 'function') toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
     
+    // تحويل المستخدم أو تحديث لوحة التحكم فوراً
     if (user.role === 'admin' && typeof renderAdminPanel === 'function') {
       renderAdminPanel();
     }
+    
+    location.reload(); // إعادة تحميل خفيفة لتثبيت حالة الحساب بالموقع
 
   } catch (err) {
     console.error("خطأ اتصال:", err);
@@ -1181,7 +1212,7 @@ async function handleLogin(e) {
     if (!el) return;
     el.innerHTML = [
       { num: members.length, lbl: 'الأعضاء النشطون', cls: '' },
-      { num: 3,   lbl: 'متصل الآن',         cls: 'green' },
+      { num: 3,   lbl: 'متصل الآن',       cls: 'green' },
       { num: 196, lbl: 'حروب مكسوبة',       cls: '' },
       { num: 654, lbl: 'إجمالي الإلغاءات',  cls: '' }
     ].map(s => `
@@ -1272,14 +1303,14 @@ async function handleLogin(e) {
     const el = document.getElementById('stats-grid');
     if (!el) return;
     const data = [
-      { num: members.length,      lbl: 'إجمالي الأعضاء',        cls: '' },
-      { num: 196,                 lbl: 'حروب مكسوبة',            cls: '' },
-      { num: 654,                 lbl: 'إلغاءات منفذة',          cls: '' },
+      { num: members.length,      lbl: 'إجمالي الأعضاء',       cls: '' },
+      { num: 196,                  lbl: 'حروب مكسوبة',            cls: '' },
+      { num: 654,                  lbl: 'إلغاءات منفذة',          cls: '' },
       { num: achievements.length, lbl: 'إنجازات مسجلة',          cls: '' },
-      { num: 3,                   lbl: 'أعضاء متصلون الآن',     cls: 'green' },
+      { num: 3,                    lbl: 'أعضاء متصلون الآن',     cls: 'green' },
       { num: reports.length,      lbl: 'تقارير منشورة',          cls: '' },
-      { num: 12,                  lbl: 'مناطق تحت السيطرة',      cls: '' },
-      { num: 98,                  lbl: 'نسبة الفوز %',           cls: '' }
+      { num: 12,                   lbl: 'مناطق تحت السيطرة',       cls: '' },
+      { num: 98,                   lbl: 'نسبة الفوز %',            cls: '' }
     ];
     el.innerHTML = data.map(s => `
       <div class="stats-sec-item">
@@ -1616,8 +1647,7 @@ async function handleLogin(e) {
   function pad(n)       { return String(n).padStart(2,'0'); }
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
-     </script>
-    document.addEventListener('DOMContentLoaded', initApp);
-  </script>
+  document.addEventListener('DOMContentLoaded', initApp);
+</script>
 </body>
 </html>
