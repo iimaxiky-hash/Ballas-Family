@@ -1486,7 +1486,7 @@
 
     try {
       // 1. جلب الحسابات الحالية مباشرة من الفايربيز للتحقق من عدم تكرار الاسم
-      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/accounts.json");
+      const res = await fetch("https://ballas-web-default-rtdb.firebaseio.com/.");
       const data = await res.json() || {};
       
       // تحويل كائن الفايربيز إلى مصفوفة للتعامل معها
