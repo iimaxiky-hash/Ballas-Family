@@ -20,13 +20,12 @@ function restoreSession() {
 function applySession(session) {
     if (!session || !session.username) return;
     
-    // تحديث الواجهة بناءً على حالة الجلسة
+    // تحديث اسم المستخدم في الواجهة
     const userBadge = document.getElementById('username-badge');
     if (userBadge) userBadge.textContent = session.username;
 
-    // إذا كان أدمن، تفعيل لوحة التحكم
+    // تفعيل لوحة التحكم إذا كان المستخدم أدمن
     if (session.role === 'admin') {
-        // ننتظر قليلاً لضمان أن DOM جاهز
         setTimeout(renderAdminAccounts, 500);
     }
 }
@@ -62,6 +61,17 @@ async function handleLogin(e) {
     }
 }
 
+// ── MODAL CONTROL ────────────────────────────────────────────────────────
+function openLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'block';
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.style.display = 'none';
+}
+
 // ── RENDER DATA ───────────────────────────────────────────────────────────
 async function renderAdminAccounts() {
     const el = document.getElementById('admin-accounts-tbl');
@@ -89,23 +99,7 @@ async function renderAdminAccounts() {
     }
 }
 
-// أضف هذه الدالة إلى ملف script.js ليعمل زر الدخول
-function openLoginModal() {
-    const modal = document.getElementById('login-modal'); // تأكد من مطابقة المعرف (ID) لنموذج الدخول
-    if (modal) {
-        modal.style.display = 'block';
-    } else {
-        console.error("نموذج تسجيل الدخول (login-modal) غير موجود في الصفحة");
-    }
-}
-
-function closeLoginModal() {
-    const modal = document.getElementById('login-modal');
-    if (modal) modal.style.display = 'none';
-}
-
-// ── INITIALIZATION (نقطة الربط) ──────────────────────────────────────────
-// ملاحظة: نستخدم هذا لربط الأحداث دون حذف دوالك القديمة (initApp)
+// ── INITIALIZATION ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     // 1. استعادة الجلسة
     restoreSession();
@@ -113,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. ربط نموذج تسجيل الدخول
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.removeEventListener('submit', handleLogin); // تجنب التكرار
         loginForm.addEventListener('submit', handleLogin);
     }
 });
