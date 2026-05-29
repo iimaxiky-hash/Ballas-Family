@@ -736,7 +736,7 @@
   <div class="modal">
     <button class="modal-close" onclick="closeLoginModal()">×</button>
     <div class="modal-title">دخول — BALLAS</div>
-    <form id="login-form">
+    <form id="login-form" onsubmit="handleLogin(event)">
       <div class="form-group">
         <label class="form-label">اسم المستخدم</label>
         <input type="text" id="login-user" class="form-input" placeholder="أدخل اسم المستخدم" required>
@@ -746,10 +746,11 @@
         <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
       </div>
       <div class="form-error" id="login-err" style="display:none;">اسم المستخدم أو كلمة المرور غير صحيحة</div>
-      <button type="button" id="login-submit-btn" class="btn btn-primary btn-full">دخول</button>
+      <button type="submit" id="login-submit-btn" class="btn btn-primary btn-full">دخول</button>
     </form>
   </div>
 </div>
+
   <!-- ── Edit Member Modal ─────────────────────────────────────────────────── -->
   <div class="modal-overlay hidden" id="edit-member-modal">
     <div class="modal" style="max-width:500px;">
@@ -1036,7 +1037,7 @@
     { id:6, title:'دفع الغزو عن الأراضي',        imageUrl:'', date:'2026-03-05' }
   ];
 
-  // ── localStorage helpers ───────────────────────────────────────────────────
+// ── localStorage helpers ───────────────────────────────────────────────────
   function lsGet(k) {
     try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; }
   }
@@ -1046,10 +1047,10 @@
 
   // ── Seed defaults ──────────────────────────────────────────────────────────
   function initData() {
-    if (!lsGet(K.MEMBERS))      lsSet(K.MEMBERS,      DEF_MEMBERS);
-    if (!lsGet(K.REPORTS))      lsSet(K.REPORTS,      DEF_REPORTS);
+    if (!lsGet(K.MEMBERS))       lsSet(K.MEMBERS,     DEF_MEMBERS);
+    if (!lsGet(K.REPORTS))       lsSet(K.REPORTS,     DEF_REPORTS);
     if (!lsGet(K.ACHIEVEMENTS)) lsSet(K.ACHIEVEMENTS, DEF_ACHIEVEMENTS);
-    if (!lsGet(K.ANNOUNCE))     lsSet(K.ANNOUNCE,     { active:false, message:'' });
+    if (!lsGet(K.ANNOUNCE))      lsSet(K.ANNOUNCE,      { active:false, message:'' });
   }
 
   // ── App init ──────────────────────────────────────────────────────────────
@@ -1065,54 +1066,87 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
- async function handleLogin(e) {
-  e.preventDefault();
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-err');
-
-  toast('جاري التحقق من السحاب... ⏳');
-
-  try {
-    // جلب البيانات من السحاب
-    const response = await fetch(FIREBASE_URL);
-    const data = await response.json();
-
-    if (!data) {
-      toast('لا يوجد مستخدمون في السحاب!');
-      return;
-    }
-
-    // تحويل البيانات من Firebase إلى مصفوفة للبحث فيها
-    const users = Object.values(data);
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (!user) {
-      errEl.style.display = 'block';
-      toast('خطأ في البيانات');
-      return;
-    }
-
-    // إذا وجد المستخدم:
-    errEl.style.display = 'none';
-    const session = { username: user.username, role: user.role };
-    
-    // حفظ الجلسة في المتصفح (عشان ما يخرج كل ما حدثت الصفحة)
-    lsSet(K.SESSION, session);
-    applySession(session);
-    closeLoginModal();
-    
-    document.getElementById('login-form').reset();
-    toast('مرحباً ' + user.username + ' — تم الدخول بنجاح ✓');
-    
-    // إعادة توجيه للأدمن إذا كان أدمن
-    if (user.role === 'admin') { renderAdminPanel(); }
-    
-  } catch (err) {
-    toast('خطأ في الاتصال بالسيرفر');
-    console.error(err);
+  function restoreSession() {
+    const s = lsGet(K.SESSION);
+    if (s && s.username) applySession(s);
   }
-}
+  function getSession() { return lsGet(K.SESSION); }
+  function isAdmin()    { const s = getSession(); return s && s.role === 'admin'; }
+
+  // تم التعديل هنا لربطها بـ Firebase
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-user').value.trim();
+    const password = document.getElementById('login-pass').value;
+    const errEl    = document.getElementById('login-err');
+
+    toast('جاري التحقق من السحاب... ⏳');
+
+    try {
+      const response = await fetch(FIREBASE_URL);
+      const data = await response.json();
+      
+      // تحويل بيانات Firebase (كائنات) إلى مصفوفة للبحث فيها
+      const accounts = data ? Object.values(data) : [];
+      
+      // البحث في الحسابات المحلية (للأدمن فقط) أو حسابات السحاب
+      const user = USERS.find(u => u.username === username && u.password === password)
+                || accounts.find(u => u.username === username && u.password === password);
+
+      if (!user) { 
+        errEl.style.display = 'block'; 
+        toast('خطأ في اسم المستخدم أو كلمة المرور');
+        return; 
+      }
+
+      errEl.style.display = 'none';
+      const session = { username: user.username, role: user.role };
+      lsSet(K.SESSION, session);
+      applySession(session);
+      closeLoginModal();
+      document.getElementById('login-form').reset();
+      toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
+      
+      if (user.role === 'admin') { renderAdminPanel(); }
+      
+    } catch (err) {
+      console.error(err);
+      toast('فشل الاتصال بقاعدة البيانات');
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem(K.SESSION);
+    applySession(null);
+    toast('تم تسجيل الخروج');
+    showSection('home');
+  }
+
+  function applySession(session) {
+    const loginBtn    = document.getElementById('login-btn');
+    const userDisplay = document.getElementById('user-display');
+    const userBadge   = document.getElementById('username-badge');
+    const adminLink   = document.getElementById('admin-nav-link');
+    const adminMobile = document.getElementById('admin-mobile-link');
+
+    if (session && session.username) {
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (userDisplay) userDisplay.style.display = 'flex';
+      if (userBadge) userBadge.textContent = session.username;
+      
+      if (session.role === 'admin') {
+        if (adminLink)   adminLink.style.display   = 'inline';
+        if (adminMobile) adminMobile.style.display = 'block';
+      }
+    } else {
+      if (loginBtn) loginBtn.style.display = '';
+      if (userDisplay) userDisplay.style.display = 'none';
+      if (userBadge) userBadge.textContent = '—';
+      if (adminLink)   adminLink.style.display   = 'none';
+      if (adminMobile) adminMobile.style.display = 'none';
+    }
+  }
+
   // ── Navigation ─────────────────────────────────────────────────────────────
   function navClick(name) {
     showSection(name);
@@ -1266,7 +1300,7 @@
       </div>`).join('');
   }
 
-  // ── Admin Panel ────────────────────────────────────────────────────────────
+// ── Admin Panel ────────────────────────────────────────────────────────────
   function renderAdminPanel() {
     if (!isAdmin()) return;
     renderAdminMembers();
@@ -1352,8 +1386,8 @@
   }
 
   // ── Ticker ─────────────────────────────────────────────────────────────────
-// ── Firebase Config ──────────────────────────────────────────────────────────
-const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.json";
+  // ── Firebase Config ──────────────────────────────────────────────────────────
+  const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.json";
   function buildTicker() {
     const reports = lsGet(K.REPORTS) || [];
     const items = reports.length
@@ -1432,7 +1466,7 @@ const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.js
     setVal('nr-title', ''); setVal('nr-body', '');
     renderReports(); renderAdminReports(); renderStats(); buildTicker();
     toast('تم نشر التقرير');
-  }
+  } // <--- تم إصلاح القوس المغلق هنا
 
   function deleteReport(id) {
     if (!confirm('هل تريد حذف هذا التقرير؟')) return;
@@ -1464,102 +1498,79 @@ const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com/accounts.js
   }
 
   // ── Member Accounts ────────────────────────────────────────────────────────
-  async function createMemberAccount() {
-  const username  = v('mac-user');
-  const password  = v('mac-pass');
-  const joinDate  = v('mac-join');
-  const specialty = v('mac-spec');
-
-  if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
-  if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
-
-  toast('جاري الإضافة للسحاب... ⏳');
-
-  try {
-    const response = await fetch(FIREBASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, joinDate, specialty, role: 'member' })
-    });
-
-    if (response.ok) {
-      // مسح المدخلات بعد النجاح
-      ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
-      
-      // تحديث الجدول فوراً من السحاب
-      renderAdminAccounts();
-      toast('تم إنشاء حساب العضو بنجاح في السحاب! ✓');
-    } else {
-      toast('فشل الحفظ في السحاب');
-    }
-  } catch (err) {
-    toast('خطأ في الاتصال، تأكد من الإنترنت');
+  function createMemberAccount() {
+    const username  = v('mac-user');
+    const password  = v('mac-pass');
+    const joinDate  = v('mac-join');
+    const specialty = v('mac-spec');
+    if (!username || !password || !joinDate || !specialty) { toast('يرجى ملء جميع الحقول'); return; }
+    if (username === 'Samoley') { toast('لا يمكن استخدام هذا الاسم'); return; }
+    const accounts = lsGet(K.ACCOUNTS) || [];
+    if (accounts.find(a => a.username === username)) { toast('اسم المستخدم موجود بالفعل'); return; }
+    const id = accounts.length ? Math.max(...accounts.map(a => a.id)) + 1 : 1;
+    accounts.push({ id, username, password, joinDate, specialty, role: 'member' });
+    lsSet(K.ACCOUNTS, accounts);
+    ['mac-user','mac-pass','mac-join','mac-spec'].forEach(fid => { const el = document.getElementById(fid); if(el) el.value=''; });
+    renderAdminAccounts();
+    toast('تم إنشاء حساب العضو: ' + username + ' ✓');
   }
-}
 
   async function renderAdminAccounts() {
-  if (!isAdmin()) return;
-  const el = document.getElementById('admin-accounts-tbl');
-  if (!el) return;
+    if (!isAdmin()) return;
+    const el = document.getElementById('admin-accounts-tbl');
+    if (!el) return;
 
-  try {
-    // جلب الحسابات الحقيقية من السحاب مباشرة
-    const response = await fetch(FIREBASE_URL);
-    const data = await response.json();
-    
-    if (!data) { 
-      el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد في السحاب'); 
-      return; 
+    try {
+      const response = await fetch(FIREBASE_URL);
+      const data = await response.json();
+      
+      if (!data) { 
+        el.innerHTML = emptyAdmin('لا توجد حسابات أعضاء مُنشأة بعد في السحاب'); 
+        return; 
+      }
+
+      const accounts = Object.keys(data).map(key => ({
+        fbId: key,
+        ...data[key]
+      }));
+
+      el.innerHTML = `
+        <table class="admin-table">
+          <thead><tr>
+            <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
+          </tr></thead>
+          <tbody>${accounts.map(a => `
+            <tr>
+              <td>${esc(a.username)}</td>
+              <td>${esc(a.joinDate)}</td>
+              <td>${esc(a.specialty)}</td>
+              <td><div class="admin-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteCloudAccount('${a.fbId}')">حذف</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    } catch (err) {
+      el.innerHTML = emptyAdmin('خطأ في جلب البيانات من السحاب، تحقق من الاتصال أو إعدادات Firebase');
     }
-
-    // تحويل الكائنات القادمة من Firebase إلى مصفوفة مع الاحتفاظ بالـ ID الفريد للحذف
-    const accounts = Object.keys(data).map(key => ({
-      fbId: key,
-      ...data[key]
-    }));
-
-    el.innerHTML = `
-      <table class="admin-table">
-        <thead><tr>
-          <th>اسم المستخدم</th><th>تاريخ الانضمام</th><th>التخصص</th><th>الإجراءات</th>
-        </tr></thead>
-        <tbody>${accounts.map(a => `
-          <tr>
-            <td>${esc(a.username)}</td>
-            <td>${esc(a.joinDate)}</td>
-            <td>${esc(a.specialty)}</td>
-            <td><div class="admin-actions">
-              <button class="btn btn-danger btn-sm" onclick="deleteCloudAccount('${a.fbId}')">حذف</button>
-            </div></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
-  } catch (err) {
-    el.innerHTML = emptyAdmin('خطأ في جلب البيانات من السحاب، تحقق من الاتصال أو إعدادات Firebase');
   }
-}
 
-// احذف الدالة القديمة (deleteAccount) بالكامل وضع هذه مكانها:
-async function deleteCloudAccount(fbId) {
-  if (!confirm('هل تريد حذف هذا الحساب نهائياً من السحاب؟')) return;
-  
-  // رابط الحذف المباشر من قاعدة بياناتك
-  const deleteUrl = FIREBASE_URL.replace('.json', `/${fbId}.json`);
-  
-  toast('جاري الحذف من السحاب... ⏳');
-  try {
-    const response = await fetch(deleteUrl, { method: 'DELETE' });
-    if (response.ok) {
-      toast('تم حذف الحساب بنجاح ✓');
-      // تحديث الجدول فوراً بعد الحذف
-      renderAdminAccounts(); 
-    } else {
-      toast('فشل حذف الحساب');
+  async function deleteCloudAccount(fbId) {
+    if (!confirm('هل تريد حذف هذا الحساب نهائياً من السحاب؟')) return;
+    const deleteUrl = FIREBASE_URL.replace('.json', `/${fbId}.json`);
+    toast('جاري الحذف من السحاب... ⏳');
+    try {
+      const response = await fetch(deleteUrl, { method: 'DELETE' });
+      if (response.ok) {
+        toast('تم حذف الحساب بنجاح ✓');
+        renderAdminAccounts(); 
+      } else {
+        toast('فشل حذف الحساب');
+      }
+    } catch (err) {
+      toast('خطأ في الاتصال بالسيرفر');
     }
-  } catch (err) {
-    toast('خطأ في الاتصال بالسيرفر');
   }
-}
 
   // ── Announcement Banner ────────────────────────────────────────────────────
   function activateAnn() {
