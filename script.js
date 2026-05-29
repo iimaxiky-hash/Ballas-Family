@@ -9,18 +9,25 @@ const K = {
 };
 
 // ── 2. دوال التخزين المحلي ──────────────────────────────────────────────────
-function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
-function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+function lsGet(k) { 
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } 
+    catch { return null; } 
+}
+function lsSet(k, v) { 
+    try { localStorage.setItem(k, JSON.stringify(v)); } 
+    catch (e) { console.error("خطأ في حفظ البيانات:", e); } 
+}
 
 // ── 3. دوال الجلسة (Auth) ──────────────────────────────────────────────────
 function applySession(session) {
   const loginBtn = document.getElementById('login-btn');
   const userDisplay = document.getElementById('user-display');
+  
   if (session && session.username) {
     if (loginBtn) loginBtn.style.display = 'none';
     if (userDisplay) userDisplay.style.display = 'flex';
   } else {
-    if (loginBtn) loginBtn.style.display = '';
+    if (loginBtn) loginBtn.style.display = 'block';
     if (userDisplay) userDisplay.style.display = 'none';
   }
 }
@@ -41,7 +48,10 @@ async function handleLogin(e) {
     const response = await fetch(FIREBASE_URL);
     const data = await response.json();
     
-    if (!data) { alert('قاعدة البيانات غير متصلة!'); return; }
+    if (!data) { 
+        alert('لا يمكن الاتصال بقاعدة البيانات!'); 
+        return; 
+    }
 
     const users = Object.values(data);
     const foundUser = users.find(u => u.username === username && u.password === password);
@@ -52,16 +62,19 @@ async function handleLogin(e) {
       location.reload(); 
     } else {
       if (errEl) errEl.style.display = 'block';
+      console.log("بيانات الدخول غير صحيحة");
     }
   } catch (err) {
     console.error("خطأ اتصال:", err);
+    alert('حدث خطأ أثناء محاولة الاتصال بالسيرفر');
   }
 }
 
-// ── 5. تهيئة التطبيق ────────────────────────────────────────────────────────
+// ── 5. تهيئة التطبيق (هذه الدالة يجب أن تحتوي على كل دوال البدء) ────────────
 function initApp() {
   restoreSession();
-  console.log("تم تشغيل التطبيق بنجاح");
+  console.log("تم تحميل التطبيق بالكامل");
 }
 
+// ── 6. التشغيل (آخر سطر في الملف) ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', initApp);
