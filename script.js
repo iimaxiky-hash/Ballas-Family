@@ -5,27 +5,40 @@ const FIREBASE_URL = "https://ballas-web-default-rtdb.firebaseio.com";
 function restoreSession() {
     const sessionStr = localStorage.getItem('Ballas_Session');
     if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        applySession(session);
-        return session;
+        try {
+            const session = JSON.parse(sessionStr);
+            applySession(session);
+            return session;
+        } catch (e) {
+            console.error("فشل في قراءة الجلسة:", e);
+            localStorage.removeItem('Ballas_Session');
+        }
     }
     return null;
 }
 
 function applySession(session) {
-    // يمكنك إضافة منطق إظهار/إخفاء العناصر هنا بناءً على الـ role
-    console.log("Session restored for:", session.username);
+    if (!session || !session.username) return;
+    
+    // تحديث الواجهة بناءً على حالة الجلسة
+    const userBadge = document.getElementById('username-badge');
+    if (userBadge) userBadge.textContent = session.username;
+
+    // إذا كان أدمن، تفعيل لوحة التحكم
     if (session.role === 'admin') {
-        renderAdminAccounts();
+        // ننتظر قليلاً لضمان أن DOM جاهز
+        setTimeout(renderAdminAccounts, 500);
     }
 }
 
 // ── LOGIN SYSTEM ──────────────────────────────────────────────────────────
 async function handleLogin(e) {
     if (e) e.preventDefault();
-    const username = document.getElementById('login-user').value.trim();
-    const password = document.getElementById('login-pass').value;
+    const username = document.getElementById('login-user')?.value.trim();
+    const password = document.getElementById('login-pass')?.value;
     const errEl = document.getElementById('login-err');
+
+    if (!username || !password) return;
 
     try {
         const res = await fetch(`${FIREBASE_URL}/accounts.json`);
@@ -45,7 +58,7 @@ async function handleLogin(e) {
         
         window.location.reload(); 
     } catch (err) {
-        console.error("خطأ في تسجيل الدخول:", err);
+        console.error("خطأ في الاتصال بالسيرفر:", err);
     }
 }
 
@@ -59,8 +72,8 @@ async function renderAdminAccounts() {
         const data = await res.json();
         const accounts = data ? Object.values(data) : [];
 
-        if (!accounts.length) {
-            el.innerHTML = '<p>لا توجد حسابات</p>';
+        if (accounts.length === 0) {
+            el.innerHTML = '<p style="padding:10px;">لا توجد حسابات</p>';
             return;
         }
 
@@ -68,20 +81,24 @@ async function renderAdminAccounts() {
             <table class="admin-table">
                 <thead><tr><th>المستخدم</th><th>التخصص</th></tr></thead>
                 <tbody>
-                    ${accounts.map(a => `<tr><td>${a.username}</td><td>${a.specialty}</td></tr>`).join('')}
+                    ${accounts.map(a => `<tr><td>${a.username || 'N/A'}</td><td>${a.specialty || '—'}</td></tr>`).join('')}
                 </tbody>
             </table>`;
     } catch (err) {
-        el.innerHTML = '<p>خطأ في تحميل البيانات</p>';
+        el.innerHTML = '<p>خطأ في تحميل البيانات من السيرفر</p>';
     }
 }
 
-// ── INITIALIZATION ────────────────────────────────────────────────────────
+// ── INITIALIZATION (نقطة الربط) ──────────────────────────────────────────
+// ملاحظة: نستخدم هذا لربط الأحداث دون حذف دوالك القديمة (initApp)
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. استعادة الجلسة فور تحميل الصفحة
+    // 1. استعادة الجلسة
     restoreSession();
 
     // 2. ربط نموذج تسجيل الدخول
     const loginForm = document.getElementById('login-form');
-    if (loginForm) loginForm.addEventListener('submit', handleLogin);
+    if (loginForm) {
+        loginForm.removeEventListener('submit', handleLogin); // تجنب التكرار
+        loginForm.addEventListener('submit', handleLogin);
+    }
 });
