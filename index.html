@@ -637,6 +637,34 @@
         </div>
 
         <div class="admin-section">
+          <div class="admin-section-title">📊 تعديل الإحصائيات</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px;letter-spacing:.04em;">تُحدَّث الأرقام فوراً في الرئيسية وصفحة الإحصائيات</p>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">متصل الآن</label>
+              <input type="number" id="stat-online" class="form-input" min="0" placeholder="3">
+            </div>
+            <div class="form-group">
+              <label class="form-label">حروب مكسوبة</label>
+              <input type="number" id="stat-wars" class="form-input" min="0" placeholder="196">
+            </div>
+            <div class="form-group">
+              <label class="form-label">إجمالي الإلغاءات</label>
+              <input type="number" id="stat-kills" class="form-input" min="0" placeholder="654">
+            </div>
+            <div class="form-group">
+              <label class="form-label">مناطق تحت السيطرة</label>
+              <input type="number" id="stat-zones" class="form-input" min="0" placeholder="12">
+            </div>
+            <div class="form-group">
+              <label class="form-label">نسبة الفوز %</label>
+              <input type="number" id="stat-winrate" class="form-input" min="0" max="100" placeholder="98">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveStats()" style="margin-top:4px;">💾 حفظ الإحصائيات</button>
+        </div>
+
+        <div class="admin-section">
           <div class="admin-section-title">🚨 إرسال تنبيه عاجل</div>
           <div class="form-group"><label class="form-label">نص التنبيه العاجل</label><input type="text" id="ann-text" class="form-input" placeholder="أدخل نص التنبيه العاجل..."></div>
           <div style="display:flex;gap:12px;">
@@ -751,7 +779,8 @@
     ACHIEVEMENTS: 'achievements',
     ANNOUNCE:     'announcement',
     ACCOUNTS:     'accounts',
-    JOIN_REQUESTS:'join_requests'
+    JOIN_REQUESTS:'join_requests',
+    STATS:        'custom_stats'
   };
 
   // ── Admin credentials (hard-coded, not in DB) ──────────────────────────────
@@ -789,6 +818,7 @@
   let _accounts     = [];
   let _announce     = { active: false, message: '' };
   let _joinRequests = [];
+  let _stats = {};
 
   // ── Session (still in sessionStorage — per tab, not persisted) ────────────
   function getSession()  { try { const v = sessionStorage.getItem('ballas_session'); return v ? JSON.parse(v) : null; } catch { return null; } }
@@ -824,15 +854,24 @@
   }
 
   // ── Seed Firebase on first load ────────────────────────────────────────────
+  const DEF_STATS = {
+    online:    3,
+    wars_won:  196,
+    kills:     654,
+    zones:     12,
+    win_rate:  98
+  };
+
   async function seedIfEmpty() {
-    const [m, r, a, ann] = await Promise.all([
-      fbGet(P.MEMBERS), fbGet(P.REPORTS), fbGet(P.ACHIEVEMENTS), fbGet(P.ANNOUNCE)
+    const [m, r, a, ann, st] = await Promise.all([
+      fbGet(P.MEMBERS), fbGet(P.REPORTS), fbGet(P.ACHIEVEMENTS), fbGet(P.ANNOUNCE), fbGet(P.STATS)
     ]);
     const writes = [];
     if (!m)   writes.push(fbSet(P.MEMBERS,      arrayToObj(DEF_MEMBERS)));
     if (!r)   writes.push(fbSet(P.REPORTS,      arrayToObj(DEF_REPORTS)));
     if (!a)   writes.push(fbSet(P.ACHIEVEMENTS, arrayToObj(DEF_ACHIEVEMENTS)));
     if (!ann) writes.push(fbSet(P.ANNOUNCE,     { active: false, message: '' }));
+    if (!st)  writes.push(fbSet(P.STATS,        DEF_STATS));
     await Promise.all(writes);
   }
 
@@ -853,6 +892,11 @@
     db.ref(P.ACCOUNTS).on('value', snap => {
       _accounts = objToArray(snap.val() || {});
       renderAdminAccounts();
+    });
+    db.ref(P.STATS).on('value', snap => {
+      _stats = snap.val() || DEF_STATS;
+      renderHomeStats();
+      renderStats();
     });
     db.ref(P.JOIN_REQUESTS).on('value', snap => {
       _joinRequests = objToArray(snap.val() || {});
@@ -938,6 +982,7 @@
 
   function showSection(name) {
     if (name === 'admin' && !isAdmin()) { openLoginModal(); return; }
+    if (name === 'admin') setTimeout(fillStatsInputs, 100);
     document.querySelectorAll('.page-section').forEach(s => {
       s.classList.remove('active');
       s.style.display = '';
@@ -959,15 +1004,16 @@
   function renderHomeStats() {
     const el = document.getElementById('home-stats');
     if (!el) return;
+    const s = _stats;
     el.innerHTML = [
-      { num: _members.length, lbl: 'الأعضاء النشطون', cls: '' },
-      { num: 3,   lbl: 'متصل الآن',        cls: 'green' },
-      { num: 196, lbl: 'حروب مكسوبة',      cls: '' },
-      { num: 654, lbl: 'إجمالي الإلغاءات', cls: '' }
-    ].map(s => `
+      { num: _members.length,      lbl: 'الأعضاء النشطون', cls: '',      key: null },
+      { num: s.online   ?? 3,      lbl: 'متصل الآن',        cls: 'green', key: 'online' },
+      { num: s.wars_won ?? 196,    lbl: 'حروب مكسوبة',      cls: '',      key: 'wars_won' },
+      { num: s.kills    ?? 654,    lbl: 'إجمالي الإلغاءات', cls: '',      key: 'kills' }
+    ].map(stat => `
       <div class="stat-card">
-        <span class="stat-num ${s.cls}">${s.num}</span>
-        <span class="stat-lbl">${s.lbl}</span>
+        <span class="stat-num ${stat.cls}">${stat.num}</span>
+        <span class="stat-lbl">${stat.lbl}</span>
       </div>`).join('');
   }
 
@@ -1042,15 +1088,16 @@
   function renderStats() {
     const el = document.getElementById('stats-grid');
     if (!el) return;
+    const s = _stats;
     const data = [
-      { num: _members.length,      lbl: 'إجمالي الأعضاء',       cls: '' },
-      { num: 196,                  lbl: 'حروب مكسوبة',           cls: '' },
-      { num: 654,                  lbl: 'إلغاءات منفذة',         cls: '' },
-      { num: _achievements.length, lbl: 'إنجازات مسجلة',         cls: '' },
-      { num: 3,                    lbl: 'أعضاء متصلون الآن',    cls: 'green' },
-      { num: _reports.length,      lbl: 'تقارير منشورة',         cls: '' },
-      { num: 12,                   lbl: 'مناطق تحت السيطرة',     cls: '' },
-      { num: 98,                   lbl: 'نسبة الفوز %',          cls: '' }
+      { num: _members.length,       lbl: 'إجمالي الأعضاء',      cls: '',      key: null },
+      { num: s.wars_won  ?? 196,    lbl: 'حروب مكسوبة',          cls: '',      key: 'wars_won' },
+      { num: s.kills     ?? 654,    lbl: 'إلغاءات منفذة',        cls: '',      key: 'kills' },
+      { num: _achievements.length,  lbl: 'إنجازات مسجلة',        cls: '',      key: null },
+      { num: s.online    ?? 3,      lbl: 'أعضاء متصلون الآن',   cls: 'green', key: 'online' },
+      { num: _reports.length,       lbl: 'تقارير منشورة',        cls: '',      key: null },
+      { num: s.zones     ?? 12,     lbl: 'مناطق تحت السيطرة',    cls: '',      key: 'zones' },
+      { num: s.win_rate  ?? 98,     lbl: 'نسبة الفوز %',         cls: '',      key: 'win_rate' }
     ];
     el.innerHTML = data.map(s => `
       <div class="stats-sec-item">
@@ -1306,6 +1353,31 @@
   }
 
   // ── Announcement ───────────────────────────────────────────────────────────
+  function saveStats() {
+    const online   = parseInt(document.getElementById('stat-online').value)   || 0;
+    const wars_won = parseInt(document.getElementById('stat-wars').value)     || 0;
+    const kills    = parseInt(document.getElementById('stat-kills').value)    || 0;
+    const zones    = parseInt(document.getElementById('stat-zones').value)    || 0;
+    const win_rate = parseInt(document.getElementById('stat-winrate').value)  || 0;
+    db.ref(P.STATS).set({ online, wars_won, kills, zones, win_rate })
+      .then(() => toast('✅ تم حفظ الإحصائيات بنجاح'));
+  }
+
+  function fillStatsInputs() {
+    const s = _stats;
+    const map = {
+      'stat-online':  s.online   ?? 3,
+      'stat-wars':    s.wars_won ?? 196,
+      'stat-kills':   s.kills    ?? 654,
+      'stat-zones':   s.zones    ?? 12,
+      'stat-winrate': s.win_rate ?? 98
+    };
+    Object.entries(map).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = val;
+    });
+  }
+
   function activateAnn() {
     const text = v('ann-text');
     if (!text) { toast('يرجى إدخال نص التنبيه'); return; }
