@@ -1055,15 +1055,23 @@
 
   // ── App init ──────────────────────────────────────────────────────────────
   function initApp() {
-    initData();
+  initData();
+  
+  // تحسين: التأكد من وجود الدالة قبل استدعائها لمنع انهيار البرنامج
+  if (typeof restoreSession === 'function') {
     restoreSession();
-    renderAll();
-    refreshBanner();
-    buildTicker();
-    const hash = location.hash.replace('#','');
-    const valid = ['home','members','achievements','stats','reports','join','admin'];
-    showSection(valid.includes(hash) ? hash : 'home');
+  } else {
+    console.error("خطأ: دالة restoreSession غير موجودة!");
   }
+
+  renderAll();
+  refreshBanner();
+  buildTicker();
+  
+  const hash = location.hash.replace('#','');
+  const valid = ['home','members','achievements','stats','reports','join','admin'];
+  showSection(valid.includes(hash) ? hash : 'home');
+}
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   // تأكد أن هذا السطر في أعلى الملف خارج أي دالة
