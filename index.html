@@ -1066,62 +1066,51 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  function restoreSession() {
-    const s = lsGet(K.SESSION);
-    if (s && s.username) applySession(s);
-  }
-  function getSession() { return lsGet(K.SESSION); }
-  function isAdmin()    { const s = getSession(); return s && s.role === 'admin'; }
+  async function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-err');
 
-  function handleLogin(e) {
-    e.preventDefault();
-    const username = document.getElementById('login-user').value.trim();
-    const password = document.getElementById('login-pass').value;
-    const errEl    = document.getElementById('login-err');
-    const storedAccounts = lsGet(K.ACCOUNTS) || [];
+  toast('جاري الاتصال بالسيرفر... ⏳');
+
+  try {
+    // 1. جلب الحسابات الحقيقية من Firebase
+    const response = await fetch(FIREBASE_URL);
+    const data = await response.json();
+    
+    // تحويل البيانات من Firebase إلى مصفوفة (Array)
+    const accounts = data ? Object.values(data) : [];
+    
+    // 2. البحث عن المستخدم (سواء في قائمة USERS الثابتة أو في حسابات السحابة)
     const user = USERS.find(u => u.username === username && u.password === password)
-              || storedAccounts.find(u => u.username === username && u.password === password);
-    if (!user) { errEl.style.display = 'block'; return; }
+              || accounts.find(u => u.username === username && u.password === password);
+
+    if (!user) {
+      errEl.style.display = 'block';
+      toast('خطأ: اسم المستخدم أو كلمة المرور غير صحيحة');
+      return;
+    }
+
+    // 3. إذا نجح الدخول:
     errEl.style.display = 'none';
     const session = { username: user.username, role: user.role };
     lsSet(K.SESSION, session);
     applySession(session);
     closeLoginModal();
     document.getElementById('login-form').reset();
+    
     toast('مرحباً ' + user.username + ' — تم تسجيل الدخول بنجاح ✓');
-    if (user.role === 'admin') { renderAdminPanel(); }
-  }
-
-  function logout() {
-    localStorage.removeItem(K.SESSION);
-    applySession(null);
-    toast('تم تسجيل الخروج');
-    showSection('home');
-  }
-
-  function applySession(session) {
-    const loginBtn    = document.getElementById('login-btn');
-    const userDisplay = document.getElementById('user-display');
-    const userBadge   = document.getElementById('username-badge');
-    const adminLink   = document.getElementById('admin-nav-link');
-    const adminMobile = document.getElementById('admin-mobile-link');
-
-    if (session && session.username) {
-      loginBtn.style.display    = 'none';
-      userDisplay.style.display = 'flex';
-      userBadge.textContent     = session.username;
-      if (session.role === 'admin') {
-        if (adminLink)   adminLink.style.display   = 'inline';
-        if (adminMobile) adminMobile.style.display = 'block';
-      }
-    } else {
-      loginBtn.style.display    = '';
-      userDisplay.style.display = 'none';
-      userBadge.textContent     = '—';
-      if (adminLink)   adminLink.style.display   = 'none';
-      if (adminMobile) adminMobile.style.display = 'none';
+    
+    if (user.role === 'admin') {
+      renderAdminPanel();
     }
+
+  } catch (err) {
+    toast('خطأ في الاتصال بقاعدة البيانات. تأكد من الإنترنت.');
+    console.error(err);
   }
+}
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   function navClick(name) {
