@@ -20,14 +20,24 @@ function restoreSession() {
 function applySession(session) {
     if (!session || !session.username) return;
     
-    // تحديث اسم المستخدم في الواجهة
+    // إخفاء زر الدخول وإظهار منطقة المستخدم
+    const loginBtn = document.getElementById('login-btn');
+    const userDisplay = document.getElementById('user-display');
     const userBadge = document.getElementById('username-badge');
+
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (userDisplay) userDisplay.style.display = 'flex';
     if (userBadge) userBadge.textContent = session.username;
 
     // تفعيل لوحة التحكم إذا كان المستخدم أدمن
     if (session.role === 'admin') {
         setTimeout(renderAdminAccounts, 500);
     }
+}
+
+function logout() {
+    localStorage.removeItem('Ballas_Session');
+    window.location.reload();
 }
 
 // ── LOGIN SYSTEM ──────────────────────────────────────────────────────────
@@ -61,7 +71,7 @@ async function handleLogin(e) {
     }
 }
 
-// ── MODAL CONTROL ────────────────────────────────────────────────────────
+// ── UI HELPERS ────────────────────────────────────────────────────────────
 function openLoginModal() {
     const modal = document.getElementById('login-modal');
     if (modal) modal.style.display = 'block';
@@ -70,6 +80,11 @@ function openLoginModal() {
 function closeLoginModal() {
     const modal = document.getElementById('login-modal');
     if (modal) modal.style.display = 'none';
+}
+
+function toggleMobile() {
+    const nav = document.querySelector('.nav-links'); // تأكد من اسم كلاس القائمة عندك
+    if (nav) nav.classList.toggle('active');
 }
 
 // ── RENDER DATA ───────────────────────────────────────────────────────────
@@ -95,16 +110,13 @@ async function renderAdminAccounts() {
                 </tbody>
             </table>`;
     } catch (err) {
-        el.innerHTML = '<p>خطأ في تحميل البيانات من السيرفر</p>';
+        el.innerHTML = '<p>خطأ في تحميل البيانات</p>';
     }
 }
 
 // ── INITIALIZATION ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. استعادة الجلسة
     restoreSession();
-
-    // 2. ربط نموذج تسجيل الدخول
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
